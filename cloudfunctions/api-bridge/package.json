@@ -1,0 +1,1 @@
+{"name": "api-bridge", "version": "1.0.0", "description": "ERP API桥接云函数", "main": "index.js", "dependencies": {"wx-server-sdk": "latest"}, "scripts": {"deploy": "echo '请在微信开发者工具中部署此云函数'", "test": "echo '请使用云开发环境测试'"}, "author": "荣禾ERP开发团队", "license": "MIT"}
