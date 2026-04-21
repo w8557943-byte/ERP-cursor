@@ -1,0 +1,188 @@
+/* 客户详情页面样式 */
+.detail-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+}
+
+.customer-detail {
+  background: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.05);
+}
+
+/* 基本信息部分 */
+.basic-info-section {
+  padding: 40rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.customer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.customer-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+}
+
+.status-badge {
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: normal;
+}
+
+.status-badge.active {
+  background: #e8f5e8;
+  color: #52c41a;
+}
+
+.status-badge.inactive {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+  width: 120rpx;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  flex: 1;
+}
+
+.call-icon {
+  margin-left: 15rpx;
+  font-size: 32rpx;
+  color: #1890ff;
+}
+
+/* 频繁率部分 */
+.frequency-section {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.section-title {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  font-weight: bold;
+}
+
+.stars-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.star {
+  font-size: 36rpx;
+  margin-right: 12rpx;
+}
+
+.star-active {
+  color: #ffc53d;
+  text-shadow: 0 2rpx 4rpx rgba(255, 197, 61, 0.3);
+}
+
+.star-inactive {
+  color: #ddd;
+}
+
+.frequency-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 统计部分 */
+.stats-section {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.stats-grid {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-number {
+  display: block;
+  font-size: 32rpx;
+  color: #1890ff;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 操作按钮部分 */
+.action-section {
+  padding: 30rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  border: 1rpx solid #ddd;
+  background: white;
+  color: #666;
+}
+
+.action-btn.primary {
+  background: #1890ff;
+  color: white;
+  border-color: #1890ff;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 200rpx 0;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}

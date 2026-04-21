@@ -1,0 +1,15 @@
+<view class="container">
+  <view class="header">录入物流信息</view>
+  <form bindsubmit="onSubmit">
+    <view class="form-item">
+      <input name="trackingNo" placeholder="物流单号" value="{{trackingNo}}" />
+    </view>
+    <view class="form-item">
+      <input name="carrier" placeholder="承运商" value="{{carrier}}" />
+    </view>
+    <view class="form-item">
+      <input name="note" placeholder="备注" value="{{note}}" />
+    </view>
+    <button formType="submit" type="primary">提交</button>
+  </form>
+</view>

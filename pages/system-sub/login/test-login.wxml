@@ -1,0 +1,57 @@
+<view class="test-container">
+  <view class="header">
+    <text class="title">登录功能调试</text>
+  </view>
+  
+  <view class="form">
+    <view class="form-item">
+      <text class="label">用户名:</text>
+      <input class="input" placeholder="请输入用户名" value="{{username}}" bindinput="bindUsernameInput" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">密码:</text>
+      <input class="input" password placeholder="请输入密码" value="{{password}}" bindinput="bindPasswordInput" />
+    </view>
+    
+    <view class="buttons">
+      <button class="btn primary" bindtap="testBasicConnection" loading="{{loading}}" disabled="{{loading}}">
+        测试基础连接
+      </button>
+      
+      <button class="btn secondary" bindtap="createTestUser" loading="{{loading}}" disabled="{{loading}}">
+        创建测试用户
+      </button>
+      
+      <button class="btn primary" bindtap="testLogin" loading="{{loading}}" disabled="{{loading}}">
+        测试登录
+      </button>
+      
+      <button class="btn secondary" bindtap="testDatabase" loading="{{loading}}" disabled="{{loading}}">
+        测试数据库
+      </button>
+      
+      <button class="btn plain" bindtap="clearResults">
+        清除结果
+      </button>
+    </view>
+  </view>
+  
+  <view class="result-container" wx:if="{{result || error}}">
+    <view class="result-header">
+      <text class="result-title">{{result ? '登录结果:' : '错误信息:'}}</text>
+      <button class="copy-btn" bindtap="copyResult">复制</button>
+    </view>
+    
+    <view class="result-content {{error ? 'error' : ''}}">
+      <text class="result-text">{{result || error}}</text>
+    </view>
+  </view>
+  
+  <view class="help">
+    <view class="help-title">测试账号:</view>
+    <view class="help-content">
+      <text>管理员: admin / admin123</text>
+    </view>
+  </view>
+</view>

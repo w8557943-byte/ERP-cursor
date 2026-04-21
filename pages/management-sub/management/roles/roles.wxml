@@ -1,0 +1,33 @@
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">📋</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">角色权限设置</text>
+        <text class="sub-title">配置不同角色的系统权限</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 角色权限列表 -->
+  <view class="content-section">
+    <view class="section-header">
+      <text class="section-title">角色权限配置</text>
+    </view>
+    
+    <view class="roles-list">
+      <view class="role-item" wx:for="{{roles}}" wx:key="id">
+        <view class="role-info">
+          <text class="role-name">{{item.name}}</text>
+          <text class="role-desc">{{item.description}}</text>
+        </view>
+        <view class="role-actions">
+          <button class="action-btn edit-btn" bindtap="editRole" data-id="{{item.id}}">编辑权限</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

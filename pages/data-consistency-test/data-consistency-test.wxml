@@ -1,0 +1,85 @@
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="header">
+    <text class="title">数据一致性测试</text>
+    <text class="subtitle">确保订单数据在各个页面之间保持一致</text>
+  </view>
+
+  <!-- 测试配置 -->
+  <view class="section">
+    <view class="section-title">测试配置</view>
+    <view class="config-list">
+      <view class="config-item" bindtap="toggleTestConfig" data-key="checkOrderProductionSync">
+        <text class="config-label">检查订单-生产同步</text>
+        <switch checked="{{testConfig.checkOrderProductionSync}}" disabled />
+      </view>
+      <view class="config-item" bindtap="toggleTestConfig" data-key="checkStatusConsistency">
+        <text class="config-label">检查状态一致性</text>
+        <switch checked="{{testConfig.checkStatusConsistency}}" disabled />
+      </view>
+      <view class="config-item" bindtap="toggleTestConfig" data-key="checkDataTimeliness">
+        <text class="config-label">检查数据时效性</text>
+        <switch checked="{{testConfig.checkDataTimeliness}}" disabled />
+      </view>
+      <view class="config-item" bindtap="toggleTestConfig" data-key="performDataSync">
+        <text class="config-label">执行数据同步</text>
+        <switch checked="{{testConfig.performDataSync}}" disabled />
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据状态 -->
+  <view class="section">
+    <view class="section-title">数据状态</view>
+    <view class="status-list">
+      <view class="status-item" wx:for="{{dataStatus}}" wx:key="*this">
+        <text class="status-label">{{item}}</text>
+        <text class="status-value">
+          数量: {{dataStatus[item].dataCount || 0}}, 
+          最后同步: {{dataStatus[item].lastSync || '无数据'}}
+          <text class="stale-tag" wx:if="{{dataStatus[item].isStale}}">陈旧</text>
+        </text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 测试操作 -->
+  <view class="section">
+    <view class="action-buttons">
+      <button type="primary" bindtap="runConsistencyTests" disabled="{{isTesting}}">
+        {{isTesting ? '测试中...' : '运行一致性测试'}}
+      </button>
+      <button type="default" bindtap="clearTestResults">清除结果</button>
+      <button type="default" bindtap="exportTestReport">导出报告</button>
+    </view>
+    
+    <view class="last-test-time" wx:if="{{lastTestTime}}">
+      最后测试时间: {{lastTestTime}}
+    </view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="section" wx:if="{{testResults.length > 0}}">
+    <view class="section-title">测试结果 ({{testResults.length}})</view>
+    <view class="test-results">
+      <view class="test-item" wx:for="{{testResults}}" wx:key="index" 
+            bindtap="viewDetailedResult" data-index="{{index}}">
+        <view class="test-header">
+          <text class="test-name">{{item.name}}</text>
+          <text class="test-status {{item.passed ? 'passed' : 'failed'}}">
+            {{item.passed ? '✓' : '✗'}}
+          </text>
+        </view>
+        <view class="test-time">{{item.timestamp}}</view>
+        <view class="test-summary">
+          {{item.passed ? '测试通过' : '测试失败'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{isTesting}}">
+    <text>正在执行测试...</text>
+  </view>
+</view>

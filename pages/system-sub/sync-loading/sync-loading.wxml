@@ -1,0 +1,19 @@
+<view class="container">
+  <view class="title">云端数据加载</view>
+  <view class="desc">{{statusText}}</view>
+
+  <view class="progress-wrap">
+    <progress percent="{{progress}}" active="{{loading}}" stroke-width="10" />
+    <view class="progress-text">{{progress}}%</view>
+  </view>
+
+  <view class="error" wx:if="{{errorText}}">
+    <view class="error-title">加载失败</view>
+    <view class="error-msg">{{errorText}}</view>
+    <view class="actions">
+      <button type="primary" bindtap="onRetry" loading="{{loading}}">重试</button>
+      <button bindtap="onSkip" disabled="{{loading}}">跳过</button>
+    </view>
+  </view>
+</view>
+

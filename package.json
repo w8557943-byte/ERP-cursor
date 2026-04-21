@@ -1,0 +1,50 @@
+{
+  "dependencies": {
+    "@tanstack/react-query": "^5.85.3",
+    "axios": "^1.11.0",
+    "better-sqlite3": "^12.4.1",
+    "chalk": "^4.1.2",
+    "colors": "^1.4.0",
+    "dotenv": "^17.2.1",
+    "eslint": "^9.33.0",
+    "fs-extra": "^11.3.1",
+    "jest": "^30.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^10.3.0",
+    "nodemailer": "^7.0.10",
+    "react-error-boundary": "^6.0.0",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
+    "stylelint": "^16.23.1",
+    "supertest": "^7.1.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "typescript": "^5.9.2",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.18.3",
+    "wx-server-sdk": "^3.0.0",
+    "zustand": "^5.0.7"
+  },
+  "scripts": {
+    "init:storage": "powershell -ExecutionPolicy Bypass -File scripts/stage1/init-storage.ps1",
+    "logs:rotate": "powershell -ExecutionPolicy Bypass -File scripts/stage1/logrotate.ps1",
+    "test:stage1": "jest tests/stage1 --passWithNoTests",
+    "test:backend": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config app/backend/jest.config.js app/backend/tests --runInBand --detectOpenHandles",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config app/backend/jest.config.js --coverage app/backend/tests --runInBand",
+    "test:sync-coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config app/backend/jest.sync.config.cjs --coverage --runInBand",
+    "perf:api": "artillery run scripts/perf/api-load.yml",
+    "perf:api:write": "artillery run scripts/perf/api-write.yml",
+    "perf:api:mixed": "artillery run scripts/perf/api-mixed.yml -o .artillery/mixed.json",
+    "perf:api:mixed:report": "artillery report .artillery/mixed.json -o .artillery/mixed.html"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "artillery": "^2.0.0-35",
+    "babel-jest": "^30.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "uuid": "^13.0.0"
+  }
+}

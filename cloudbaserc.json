@@ -1,0 +1,18 @@
+{
+  "envId": "erp-system-prod-1glmda1zf4f9c7a7",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "erp-api",
+      "runtime": "Nodejs16.13",
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "api-bridge",
+      "runtime": "Nodejs16.13",
+      "installDependency": true,
+      "handler": "index.main"
+    }
+  ]
+}

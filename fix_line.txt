@@ -1,0 +1,1 @@
+﻿  const [categories, setCategories] = useState(['纸箱','隔板','天地盒','飞机盒','异性纸盒'])

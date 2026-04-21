@@ -1,0 +1,112 @@
+<view class="simple-workbench">
+  <!-- 欢迎信息 -->
+  <view class="welcome-section">
+      <view class="welcome-content">
+      <view class="welcome-left">
+        <text class="greeting">{{greetingText}}，{{displayName}}！</text>
+        <text class="date-time">{{currentDate}} {{currentWeekday}} {{lunarDate}}</text>
+      </view>
+      <view class="welcome-right" bindtap="openReminders">
+        <view class="reminder-icon">🔔</view>
+        <view class="reminder-badge" wx:if="{{reminderCount > 0}}">{{reminderCount > 99 ? '99+' : reminderCount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计卡片 -->
+  <view class="stats-section">
+    <view class="stats-grid">
+      <view class="stat-card stat-orders" bindtap="viewOrders">
+        <view class="stat-icon">📋</view>
+        <view class="stat-content">
+          <text class="stat-number">{{loading ? '...' : stats.todayOrders}}</text>
+          <text class="stat-label">本月订单</text>
+        </view>
+      </view>
+
+      <view class="stat-card stat-production" bindtap="viewProduction">
+        <view class="stat-icon">🏭</view>
+        <view class="stat-content">
+          <text class="stat-number">{{loading ? '...' : stats.inProduction}}</text>
+          <text class="stat-label">生产中</text>
+        </view>
+      </view>
+
+      <view class="stat-card stat-completed">
+        <view class="stat-icon">✅</view>
+        <view class="stat-content">
+          <text class="stat-number">{{loading ? '...' : stats.completedToday}}</text>
+          <text class="stat-label">已完成</text>
+        </view>
+      </view>
+
+      <view class="stat-card stat-revenue">
+        <view class="stat-icon">💰</view>
+        <view class="stat-content">
+          <text class="stat-number">{{loading ? '...' : '¥' + formatRevenue}}</text>
+          <text class="stat-label">今日营收</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷功能 -->
+  <view class="quick-actions">
+    <text class="section-title">快捷功能</text>
+    <view class="action-grid">
+      <view class="action-item" bindtap="openDataManagement">
+        <view class="action-icon">📊</view>
+        <text class="action-label">数据管理</text>
+      </view>
+
+      <view class="action-item" bindtap="viewPurchases">
+        <view class="action-icon">🛒</view>
+        <text class="action-label">采购管理</text>
+      </view>
+
+      <view class="action-item" bindtap="viewInventory">
+        <view class="action-icon">📦</view>
+        <text class="action-label">库存管理</text>
+      </view>
+
+      <view class="action-item" bindtap="viewCustomers">
+        <view class="action-icon">👥</view>
+        <text class="action-label">客户管理</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="overview-section">
+    <text class="section-title">数据快览</text>
+    <view class="overview-grid">
+      <view class="overview-card overview-sales">
+        <view class="overview-head">
+          <view class="overview-icon">📈</view>
+          <text class="overview-label">本月销售额</text>
+        </view>
+        <text class="overview-value">{{overviewLoading ? '...' : '¥' + overview.monthSalesText}}</text>
+      </view>
+      <view class="overview-card overview-stock">
+        <view class="overview-head">
+          <view class="overview-icon">📦</view>
+          <text class="overview-label">端库存金额</text>
+        </view>
+        <text class="overview-value">{{overviewLoading ? '...' : '¥' + overview.inventoryAmountText}}</text>
+      </view>
+      <view class="overview-card overview-receivable">
+        <view class="overview-head">
+          <view class="overview-icon">🚚</view>
+          <text class="overview-label">本月已发货金额</text>
+        </view>
+        <text class="overview-value">{{overviewLoading ? '...' : '¥' + overview.monthShippedAmountText}}</text>
+      </view>
+      <view class="overview-card overview-payable">
+        <view class="overview-head">
+          <view class="overview-icon">💳</view>
+          <text class="overview-label">本月应付款</text>
+        </view>
+        <text class="overview-value">{{overviewLoading ? '...' : '¥' + overview.monthPayableText}}</text>
+      </view>
+    </view>
+  </view>
+</view>

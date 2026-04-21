@@ -1,0 +1,35 @@
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">👥</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">员工管理</text>
+        <text class="sub-title">管理系统员工账号和权限</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 员工列表 -->
+  <view class="content-section">
+    <view class="section-header">
+      <text class="section-title">员工列表</text>
+      <button class="add-btn" bindtap="addEmployee">新增员工</button>
+    </view>
+    
+    <view class="employee-list">
+      <view class="employee-item" wx:for="{{employees}}" wx:key="id">
+        <view class="employee-info">
+          <text class="employee-name">{{item.name}}</text>
+          <text class="employee-role">{{item.role}}</text>
+        </view>
+        <view class="employee-actions">
+          <button class="action-btn edit-btn" bindtap="editEmployee" data-id="{{item.id}}">编辑</button>
+          <button class="action-btn delete-btn" bindtap="deleteEmployee" data-id="{{item.id}}">删除</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

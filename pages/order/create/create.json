@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "创建订单",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#f8fafc",
+  "backgroundTextStyle": "dark"
+}

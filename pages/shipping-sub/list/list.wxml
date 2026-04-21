@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="header">待发货列表</view>
+  <view wx:if="{{loading}}" class="loading">加载中</view>
+  <view wx:if="{{!loading && items.length === 0}}" class="empty">暂无数据</view>
+  <view wx:for="{{items}}" wx:key="id" class="item" data-id="{{item.id}}">
+    <checkbox-group>
+      <label class="row">
+        <checkbox value="{{item.id}}" checked="{{selected[item.id]}}" bindchange="onSelect" />
+        <view class="col">
+          <text>编号：{{item.id}}</text>
+          <text>状态：{{item.status}}</text>
+        </view>
+      </label>
+    </checkbox-group>
+  </view>
+  <button type="primary" bindtap="onBatchShip" class="action">批量发货</button>
+</view>

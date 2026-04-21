@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "创建订单",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f5f7fa",
+  "usingComponents": {
+    "customer-selector": "/components/customer-selector/customer-selector",
+    "product-selector": "/components/product-selector/product-selector"
+  }
+}

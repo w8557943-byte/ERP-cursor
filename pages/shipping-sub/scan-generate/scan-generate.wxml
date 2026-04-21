@@ -1,0 +1,5 @@
+<view class="container">
+  <view class="header">扫描订单二维码生成待发货</view>
+  <button type="primary" bindtap="onScan">开始扫码</button>
+  <view wx:if="{{result}}" class="result">{{result}}</view>
+</view>

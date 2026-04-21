@@ -1,0 +1,266 @@
+/* pages/index/index.wxss */
+
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* 头部样式 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.refresh-btn {
+  background-color: #1890ff;
+  padding: 16rpx 32rpx;
+  border-radius: 8rpx;
+}
+
+.refresh-text {
+  color: white;
+  font-size: 28rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200rpx;
+}
+
+.loading-text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 内容区域 */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+/* 区域标题 */
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.view-all {
+  color: #1890ff;
+  font-size: 26rpx;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+.stat-card {
+  background: white;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.stat-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 今日数据 */
+.today-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20rpx;
+}
+
+.today-item {
+  background: white;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.today-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #52c41a;
+  margin-bottom: 10rpx;
+}
+
+.today-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 财务概览 */
+.finance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+.finance-item {
+  background: white;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.finance-value {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fa8c16;
+  margin-bottom: 10rpx;
+}
+
+.finance-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 最近订单 */
+.empty-state {
+  background: white;
+  padding: 60rpx 30rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.empty-text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.order-item {
+  background: white;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.order-number {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.order-customer {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.order-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+}
+
+.status-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: white;
+}
+
+.status-pending {
+  background-color: #faad14;
+}
+
+.status-in_production {
+  background-color: #1890ff;
+}
+
+.status-completed {
+  background-color: #52c41a;
+}
+
+.status-cancelled {
+  background-color: #f5222d;
+}
+
+.order-amount {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 快捷操作 */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.action-item {
+  background: white;
+  padding: 40rpx 20rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.action-icon {
+  display: block;
+  font-size: 48rpx;
+  margin-bottom: 10rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #333;
+}

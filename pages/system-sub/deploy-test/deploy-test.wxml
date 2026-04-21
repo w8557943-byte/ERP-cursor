@@ -1,0 +1,138 @@
+<view class="deploy-test-page">
+  <view class="header">
+    <text class="title">部署测试工具</text>
+    <text class="subtitle">检查ERP系统部署状态</text>
+  </view>
+
+  <view class="content">
+    <view class="status-cards">
+      <view class="status-card {{testStatus.cloud}}">
+        <text class="card-title">云函数</text>
+        <block wx:if="{{testStatus.cloud === 'success'}}">
+          <text class="card-status">✅ 正常</text>
+        </block>
+        <block wx:elif="{{testStatus.cloud === 'error'}}">
+          <text class="card-status">❌ 异常</text>
+        </block>
+        <block wx:elif="{{testStatus.cloud === 'testing'}}">
+          <text class="card-status">🔄 测试中</text>
+        </block>
+        <block wx:else>
+          <text class="card-status">⏳ 待测试</text>
+        </block>
+      </view>
+
+      <view class="status-card {{testStatus.database}}">
+        <text class="card-title">数据库</text>
+        <block wx:if="{{testStatus.database === 'success'}}">
+          <text class="card-status">✅ 正常</text>
+        </block>
+        <block wx:elif="{{testStatus.database === 'error'}}">
+          <text class="card-status">❌ 异常</text>
+        </block>
+        <block wx:elif="{{testStatus.database === 'testing'}}">
+          <text class="card-status">🔄 测试中</text>
+        </block>
+        <block wx:else>
+          <text class="card-status">⏳ 待测试</text>
+        </block>
+      </view>
+
+      <view class="status-card {{testStatus.login}}">
+        <text class="card-title">登录</text>
+        <block wx:if="{{testStatus.login === 'success'}}">
+          <text class="card-status">✅ 正常</text>
+        </block>
+        <block wx:elif="{{testStatus.login === 'error'}}">
+          <text class="card-status">❌ 异常</text>
+        </block>
+        <block wx:elif="{{testStatus.login === 'testing'}}">
+          <text class="card-status">🔄 测试中</text>
+        </block>
+        <block wx:else>
+          <text class="card-status">⏳ 待测试</text>
+        </block>
+      </view>
+    </view>
+
+    <view class="buttons-section">
+      <button 
+        class="main-test-btn" 
+        bindtap="runFullTest"
+        loading="{{testing}}"
+        disabled="{{testing}}"
+      >
+        {{testing ? '测试中...' : '完整部署测试'}}
+      </button>
+
+      <view class="sub-buttons">
+        <button 
+          class="sub-btn" 
+          bindtap="testCloudFunctionUI"
+          disabled="{{testing}}"
+        >
+          测试云函数
+        </button>
+
+        <button 
+          class="sub-btn" 
+          bindtap="testDatabaseUI"
+          disabled="{{testing}}"
+        >
+          测试数据库
+        </button>
+
+        <button 
+          class="sub-btn" 
+          bindtap="testLoginUI"
+          disabled="{{testing}}"
+        >
+          测试登录
+        </button>
+      </view>
+
+      <button 
+        class="init-db-btn" 
+        bindtap="initDatabaseNow"
+        disabled="{{testing}}"
+      >
+        🚀 初始化数据库
+      </button>
+
+      <button 
+        class="page-test-btn" 
+        bindtap="testPageNavigation"
+        disabled="{{testing}}"
+      >
+        🧪 页面测试
+      </button>
+
+      <button 
+        class="guide-btn" 
+        bindtap="viewGuide"
+        disabled="{{testing}}"
+      >
+        查看部署指南
+      </button>
+
+      <button 
+        class="clear-btn" 
+        bindtap="clearResult"
+        disabled="{{testing}}"
+      >
+        清空结果
+      </button>
+    </view>
+
+    <view class="result-section" wx:if="{{testResult}}">
+      <text class="result-title">测试结果：</text>
+      <scroll-view class="result-content" scroll-y="true">
+        <text class="result-text">{{testResult}}</text>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="back-btn" bindtap="goBack">返回</button>
+  </view>
+</view>

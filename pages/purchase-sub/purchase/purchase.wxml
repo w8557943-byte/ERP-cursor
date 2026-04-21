@@ -1,0 +1,190 @@
+<!-- 采购管理页面 -->
+<view class="purchase-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">🛒</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">采购管理</text>
+        <text class="sub-title">统一管理商品与辅材采购</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计卡片区 -->
+  <view class="statistics-grid">
+    <view class="stat-card" bindtap="resetFilter">
+      <view class="stat-icon completed-icon">📊</view>
+      <view class="stat-content">
+        <text class="stat-number">{{totalOrders}}</text>
+        <text class="stat-label">全部采购</text>
+      </view>
+    </view>
+    
+    <view class="stat-card">
+      <view class="stat-icon completed-icon">✅</view>
+      <view class="stat-content">
+        <text class="stat-number">{{stockedOrders}}</text>
+        <text class="stat-label">已入库</text>
+      </view>
+    </view>
+
+    <view class="stat-card">
+      <view class="stat-icon producing-icon">💰</view>
+      <view class="stat-content">
+        <text class="stat-number">{{purchaseTotalAmount}}</text>
+        <text class="stat-label">采购金额</text>
+      </view>
+    </view>
+    
+    <view class="stat-card {{isStaleFilter ? 'active-card' : ''}}" bindtap="toggleStaleFilter">
+      <view class="stat-icon urgent-icon">⚠️</view>
+      <view class="stat-content">
+        <text class="stat-number">{{staleOrdersCount}}</text>
+        <text class="stat-label">呆滞订单</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分页切换 (参考库存管理) -->
+  <view class="filter-container">
+    <view class="view-tabs">
+      <view class="view-tab {{viewType === 'goods' ? 'active' : ''}}" bindtap="switchView" data-type="goods">商品采购</view>
+      <view class="view-tab {{viewType === 'raw_materials' ? 'active' : ''}}" bindtap="switchView" data-type="raw_materials">辅材采购</view>
+    </view>
+    
+    <!-- 搜索区域 -->
+    <view class="search-section">
+      <view class="search-card">
+        <view class="search-icon">🔍</view>
+        <input 
+          class="search-input" 
+          placeholder="搜索采购单号、供应商、商品名称..."
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+        />
+        <view wx:if="{{searchKeyword}}" class="clear-btn" bindtap="clearSearch">
+          <text class="clear-icon">✕</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 列表区域 -->
+  <scroll-view class="purchase-list" scroll-y refresher-enabled="{{true}}" refresher-triggered="{{isRefreshing}}" bindrefresherrefresh="onPullDownRefresh">
+    <view wx:if="{{displayList.length === 0}}" class="empty-state">
+      <text class="empty-text">暂无采购数据</text>
+    </view>
+    
+    <view wx:else class="order-cards">
+      <view wx:for="{{displayList}}" wx:key="id" class="order-card" bindtap="goToOrderDetail" data-id="{{item.id}}">
+        <view class="order-header">
+          <view class="order-info">
+            <view class="order-number-row">
+              <text class="order-number">{{item.orderNo}}</text>
+            </view>
+            <view class="customer-row">
+              <text class="customer-label">{{viewType === 'raw_materials' ? '供应商：' : '客户：'}}</text>
+              <text class="customer-name">{{viewType === 'raw_materials' ? (item.supplierName || '-') : (item.customerName || '-')}}</text>
+            </view>
+          </view>
+          <view class="right-column">
+            <!-- 统一状态/操作显示区 -->
+            <block wx:if="{{item.status !== 'cancelled'}}">
+               <!-- 非入库/完成状态显示入库按钮 -->
+               <view class="action-btn primary" 
+                     catchtap="openStockInModal" 
+                     data-item="{{item}}"
+                     wx:if="{{item.status !== 'stocked' && item.status !== 'completed'}}">
+                 入库
+               </view>
+               <!-- 已入库/完成状态显示已入库标签 -->
+               <view class="status-tag stocked" 
+                     wx:if="{{item.status === 'stocked' || item.status === 'completed'}}">
+                 {{item.statusText}}
+               </view>
+            </block>
+            <!-- 已取消状态显示标签 -->
+            <view class="status-tag cancelled" wx:if="{{item.status === 'cancelled'}}" style="background: #f1f5f9; color: #64748b; border: 1rpx solid #cbd5e1;">
+                {{item.statusText}}
+            </view>
+          </view>
+        </view>
+        
+        <view class="order-details">
+          <view class="detail-line">
+            <text class="detail-label">商品名称：</text>
+            <text class="detail-value">{{item.goodsName}}</text>
+          </view>
+          <view class="detail-line">
+            <text class="detail-label">规格型号：</text>
+            <text class="detail-value">{{item.spec}}</text>
+          </view>
+          <view class="detail-line">
+            <text class="detail-label">采购数量：</text>
+            <text class="detail-value">{{item.quantity}}{{item.unit}}</text>
+          </view>
+          <view class="detail-line" wx:if="{{item.profit !== null}}">
+            <text class="detail-label">预估利润：</text>
+            <text class="detail-value profit-value">¥{{item.profit}}</text>
+          </view>
+          <view class="detail-line">
+            <text class="detail-label">订单金额：</text>
+            <text class="detail-value">¥{{item.amount}}</text>
+          </view>
+          <view class="detail-line">
+            <text class="detail-label">下单时间：</text>
+            <text class="detail-value">{{item.createdAtText}}</text>
+          </view>
+        </view>
+
+
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 悬浮添加按钮 (仿照PC端功能入口) -->
+  <view class="fab-btn" bindtap="createPurchase">
+    <text class="fab-icon">+</text>
+  </view>
+
+  <!-- 入库弹框 -->
+  <view class="modal-mask" wx:if="{{showStockInModal}}" bindtap="closeStockInModal"></view>
+  <view class="modal-container" wx:if="{{showStockInModal}}">
+    <view class="modal-header">
+      <text class="modal-title">采购入库</text>
+      <text class="modal-close" bindtap="closeStockInModal">×</text>
+    </view>
+    <view class="modal-content">
+      <view class="info-row">
+        <text class="label">采购单号：</text>
+        <text class="value">{{currentOrder.orderNo}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">商品名称：</text>
+        <text class="value">{{currentOrder.goodsName}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">采购数量：</text>
+        <text class="value">{{currentOrder.quantity}}{{currentOrder.unit}}</text>
+      </view>
+      
+      <view class="input-group">
+        <text class="input-label">入库数量</text>
+        <input 
+          class="modal-input" 
+          type="digit" 
+          value="{{stockInQty}}" 
+          bindinput="onStockInQtyInput"
+          placeholder="请输入实际入库数量"
+        />
+      </view>
+    </view>
+    <view class="modal-footer">
+      <view class="modal-btn cancel" bindtap="closeStockInModal">取消</view>
+      <view class="modal-btn confirm" bindtap="confirmStockIn">确认入库</view>
+    </view>
+  </view>
+</view>

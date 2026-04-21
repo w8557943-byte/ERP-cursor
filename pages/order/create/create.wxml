@@ -1,0 +1,204 @@
+<view class="page">
+  <view class="header-card">
+    <view class="header-top">
+      <view class="order-no-wrap">
+        <text class="order-no">{{orderNumber || '-'}}</text>
+        <text class="copy-link" bindtap="onCopyOrderNo">复制</text>
+      </view>
+    </view>
+    <view class="header-sub">
+      <text class="header-customer">{{form.customer.name || '新建订单'}}</text>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">客户信息</text>
+    </view>
+    <view class="form-body">
+      <view class="form-row">
+        <text class="form-label">客户名称</text>
+        <view wx:if="{{customerNames.length}}">
+          <picker mode="selector" range="{{customerNames}}" bindchange="onCustomerPickerChange">
+            <view class="picker-input">{{form.customer.name || '请选择客户名称'}}</view>
+          </picker>
+        </view>
+        <input wx:else class="form-input" placeholder="请输入客户名称" value="{{form.customer.name}}" bindinput="onInput" data-field="customer.name" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">联系人</text>
+        <input class="form-input" placeholder="请输入联系人" value="{{form.customer.contact}}" bindinput="onInput" data-field="customer.contact" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">电话</text>
+        <input class="form-input" placeholder="请输入电话" value="{{form.customer.phone}}" bindinput="onInput" data-field="customer.phone" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">供应商</text>
+        <view wx:if="{{supplierNames.length}}">
+          <picker mode="selector" range="{{supplierNames}}" bindchange="onSupplierPickerChange">
+            <view class="picker-input">{{form.supplier.name || '请选择供应商'}}</view>
+          </picker>
+        </view>
+        <input wx:else class="form-input" placeholder="请输入供应商" value="{{form.supplier.name}}" bindinput="onInput" data-field="supplier.name" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">供应商联系人</text>
+        <input class="form-input" placeholder="可选" value="{{form.supplier.contact}}" bindinput="onInput" data-field="supplier.contact" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">供应商电话</text>
+        <input class="form-input" placeholder="可选" value="{{form.supplier.phone}}" bindinput="onInput" data-field="supplier.phone" />
+      </view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">产品信息</text>
+    </view>
+    <view class="form-body">
+      <view class="form-row">
+        <text class="form-label">产品类别</text>
+        <picker mode="selector" range="{{productCategoryOptions}}" bindchange="onProductCategoryPickerChange">
+          <view class="picker-input">{{creatingProductCategory ? '新增品类' : (form.product.name || '请选择产品类别')}}</view>
+        </picker>
+      </view>
+      <view class="form-row" wx:if="{{creatingProductCategory}}">
+        <text class="form-label">新增品类名称</text>
+        <input class="form-input" placeholder="请输入产品类别" value="{{form.product.name}}" bindinput="onInput" data-field="product.name" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">商品名称</text>
+        <input class="form-input" placeholder="可选" value="{{form.product.title}}" bindinput="onInput" data-field="product.title" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">规格</text>
+        <input class="form-input" placeholder="如：300*200*150" value="{{form.product.spec}}" bindinput="onInput" data-field="product.spec" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">楞别</text>
+        <picker mode="selector" range="{{fluteOptions}}" bindchange="onFlutePickerChange">
+          <view class="picker-input">{{form.product.flute || '请选择楞别'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <text class="form-label">材质编码</text>
+        <input class="form-input" placeholder="如：K=K" value="{{form.product.materialCode}}" bindinput="onInput" data-field="product.materialCode" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">物料号</text>
+        <input class="form-input" placeholder="可选" value="{{form.product.materialNo}}" bindinput="onInput" data-field="product.materialNo" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">纸板尺寸</text>
+        <view class="form-inline">
+          <input class="form-input form-input-sm" type="number" placeholder="门幅" value="{{form.product.boardWidth}}" bindinput="onInput" data-field="product.boardWidth" />
+          <text class="inline-sep">×</text>
+          <input class="form-input form-input-sm" type="number" placeholder="长度" value="{{form.product.boardHeight}}" bindinput="onInput" data-field="product.boardHeight" />
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">压线方式</text>
+        <picker mode="selector" range="{{creasingTypeOptions}}" bindchange="onCreasingTypePickerChange">
+          <view class="picker-input">{{form.product.creasing || '请选择压线方式'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <text class="form-label">压线尺寸</text>
+        <view class="form-inline">
+          <input class="form-input form-input-sm" type="number" placeholder="尺寸1" value="{{form.product.creasingSize1}}" bindinput="onInput" data-field="product.creasingSize1" disabled="{{form.product.creasing==='无压线'}}" />
+          <text class="inline-sep">-</text>
+          <input class="form-input form-input-sm" type="number" placeholder="尺寸2" value="{{form.product.creasingSize2}}" bindinput="onInput" data-field="product.creasingSize2" disabled="{{form.product.creasing==='无压线'}}" />
+          <text class="inline-sep">-</text>
+          <input class="form-input form-input-sm" type="number" placeholder="尺寸3" value="{{form.product.creasingSize3}}" bindinput="onInput" data-field="product.creasingSize3" disabled="{{form.product.creasing==='无压线'}}" />
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">下单片数</text>
+        <input class="form-input" type="number" placeholder="请输入片数(片)" value="{{form.product.sheetCount}}" bindinput="onInput" data-field="product.sheetCount" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">合拢方式</text>
+        <picker mode="selector" range="{{joinMethodOptions}}" bindchange="onJoinMethodPickerChange">
+          <view class="picker-input">{{form.joinMethod || '请选择拼接方式'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <text class="form-label">数量</text>
+        <view class="form-inline">
+          <input class="form-input form-input-sm" type="number" placeholder="数量" value="{{form.product.quantity}}" bindinput="onInput" data-field="product.quantity" />
+          <picker mode="selector" range="{{unitOptions}}" bindchange="onUnitPickerChange">
+            <view class="picker-input form-input-sm">{{form.product.unit || '单位'}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">单价</text>
+        <input class="form-input" type="digit" placeholder="元" value="{{form.product.unitPrice}}" bindinput="onInput" data-field="product.unitPrice" />
+      </view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">金额与交期</text>
+    </view>
+    <view class="form-body">
+      <view class="form-row">
+        <text class="form-label">订单金额</text>
+        <text class="form-value">¥{{amountText}}</text>
+      </view>
+      <view class="form-row">
+        <text class="form-label">已付定金</text>
+        <input class="form-input" type="digit" placeholder="0" value="{{form.amount.deposit}}" bindinput="onInput" data-field="amount.deposit" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">待付尾款</text>
+        <text class="form-value">¥{{balanceText}}</text>
+      </view>
+      <view class="form-row">
+        <text class="form-label">优先级</text>
+        <picker mode="selector" range="{{priorityText}}" bindchange="onPriorityPickerChange">
+          <view class="picker-input">{{priorityText[priorityIndex]}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <text class="form-label">交货日期</text>
+        <picker mode="date" value="{{form.deliveryDate}}" start="{{today}}" bindchange="onDateChange">
+          <view class="picker-input">{{form.deliveryDate || '请选择交货日期'}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <text class="form-label">备注</text>
+        <textarea class="form-textarea" placeholder="可选" value="{{form.notes}}" bindinput="onInput" data-field="notes" maxlength="500" />
+      </view>
+      <view class="form-row">
+        <view class="form-row-head">
+          <text class="form-label" style="margin-bottom:0;">上传图纸</text>
+          <button class="upload-btn" size="mini" bindtap="onPickAttachment" disabled="{{submitting}}">上传</button>
+        </view>
+        <view class="attachment-grid" wx:if="{{form.attachments && form.attachments.length}}">
+          <view class="attachment-cell" wx:for="{{form.attachments}}" wx:key="index" bindtap="onPreviewAttachment" data-index="{{index}}">
+            <image class="attachment-thumb" src="{{item.url}}" mode="aspectFill" wx:if="{{item.kind==='image'}}" />
+            <view class="attachment-file" wx:else>
+              <text class="attachment-file-icon">📎</text>
+              <text class="attachment-file-name">{{item.name}}</text>
+            </view>
+            <view class="attachment-remove" catchtap="onRemoveAttachment" data-index="{{index}}">×</view>
+          </view>
+        </view>
+        <view class="attachment-empty" wx:else>
+          <text class="attachment-empty-text">未上传</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-safe-space"></view>
+</view>
+
+<view class="footer-area">
+  <button class="btn btn-ghost" size="mini" bindtap="onCancel" disabled="{{submitting}}">取消</button>
+  <button class="btn btn-primary" size="mini" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">创建订单</button>
+</view>

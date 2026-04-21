@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package sync;
+
+enum EntityType {
+  UNKNOWN = 0;
+  PRODUCT = 1;
+  ORDER = 2;
+  CUSTOMER = 3;
+}
+
+enum ActionType {
+  NOOP = 0;
+  CREATE = 1;
+  UPDATE = 2;
+  DELETE = 3;
+}
+
+message SyncMessage {
+  string id = 1;           // UUID
+  int64 timestamp = 2;     // Unix timestamp (ms)
+  EntityType entity = 3;
+  ActionType action = 4;
+  string source = 5;       // Source identifier (e.g. "backend-pc", "miniprogram")
+  int32 version = 6;       // Optimistic locking version
+  bytes payload = 7;       // Serialized entity data (protobuf or JSON string if schema varies)
+  string entityId = 8;     // ID of the entity affected
+}
+
+// Minimal definitions for payload if needed, or we can use JSON string for flexibility given the dynamic nature
+// But requirement says "Protobuf 压缩协议", so we should try to use Protobuf for payload too.
+// However, maintaining strict proto for all models might be tedious if they change often.
+// Let's define core fields.
+
+message Product {
+  int32 id = 1;
+  string productCode = 2;
+  string name = 3;
+  string category = 4;
+  double price = 5;
+  int32 stock = 6;
+  string unit = 7;
+  string updatedAt = 8;
+  // Add other fields as necessary, or use a JSON string field for complex data
+  string data = 9; // JSON representation of the full object for flexibility
+}
+
+message Order {
+  int32 id = 1;
+  string orderNo = 2;
+  string status = 3;
+  double totalAmount = 4;
+  string updatedAt = 5;
+  string data = 6;
+}
+
+message Customer {
+  int32 id = 1;
+  string customerCode = 2;
+  string name = 3;
+  string phone = 4;
+  string updatedAt = 5;
+  string data = 6;
+}

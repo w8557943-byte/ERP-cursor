@@ -1,0 +1,241 @@
+<!-- 订单详情页面 -->
+<view class="order-detail-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">📋</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">订单详情</text>
+        <text class="sub-title">查看和管理订单详细信息</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单基础信息 -->
+  <view class="order-info-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">📄</text>
+        <text class="section-title">基础信息</text>
+      </view>
+      <view class="info-content">
+        <view class="info-row">
+          <text class="info-label">订单号：</text>
+          <text class="info-value">{{orderInfo.orderNo}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">客户名称：</text>
+          <text class="info-value">{{orderInfo.customer.name}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">联系人：</text>
+          <text class="info-value">{{orderInfo.customer.contact}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">下单时间：</text>
+          <text class="info-value">{{orderInfo.createdAt}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">交货日期：</text>
+          <text class="info-value">{{orderInfo.deadline}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">优先级：</text>
+          <text class="info-value">{{orderInfo.priorityText}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">订单状态：</text>
+          <text class="status-text {{orderInfo.status}}">{{orderInfo.statusText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发货信息 -->
+  <view class="shipping-section" wx:if="{{showShippingInfo}}">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">🚚</text>
+        <text class="section-title">发货信息</text>
+      </view>
+      <view class="info-content">
+        <view class="info-row">
+          <text class="info-label">入库数量：</text>
+          <text class="info-value">{{shippingInfo.stockedQty || 0}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">入库时间：</text>
+          <text class="info-value">{{shippingInfo.stockedAtText || '—'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">发货数量：</text>
+          <text class="info-value">{{shippingInfo.shippedQty || 0}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">发货时间：</text>
+          <text class="info-value">{{shippingInfo.shippedAtText || '—'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">库存数量：</text>
+          <text class="info-value">{{shippingInfo.inventoryQty || 0}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 产品信息 -->
+  <view class="product-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">📦</text>
+        <text class="section-title">产品信息</text>
+      </view>
+      <view class="product-content">
+        <view class="info-row">
+          <text class="info-label">产品类别：</text>
+          <text class="info-value">{{orderInfo.product.name}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">商品名称：</text>
+          <text class="info-value">{{orderInfo.goodsName || orderInfo.product.title || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">物料号：</text>
+          <text class="info-value">{{orderInfo.product.materialNo || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">规格型号：</text>
+          <text class="info-value">{{orderInfo.product.spec || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">楞别：</text>
+          <text class="info-value">{{orderInfo.product.flute || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">材质代码：</text>
+          <text class="info-value">{{orderInfo.product.materialCode || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">纸板尺寸：</text>
+          <text class="info-value">{{orderInfo.product.boardSizeText || (orderInfo.product.boardWidth && orderInfo.product.boardHeight ? (orderInfo.product.boardWidth + ' × ' + orderInfo.product.boardHeight + ' mm') : '无')}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">压线尺寸：</text>
+          <text class="info-value">{{orderInfo.product.creaseText || '无'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+
+
+  <!-- 数量与金额信息 -->
+  <view class="quantity-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">💰</text>
+        <text class="section-title">数量与金额</text>
+      </view>
+      <view class="quantity-content">
+        <view class="info-row">
+          <text class="info-label">数量：</text>
+          <text class="info-value">{{orderInfo.product.quantity}} {{orderInfo.product.unit}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">下单片数：</text>
+          <text class="info-value">{{orderInfo.product.sheetCount || orderInfo.product.quantity}} 片</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">单位：</text>
+          <text class="info-value">{{orderInfo.product.unit}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">单价：</text>
+          <text class="info-value">¥{{orderInfo.product.unitPrice}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">原材料单价：</text>
+          <text class="info-value">¥{{orderInfo.product.rawUnitPrice}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">毛利润：</text>
+          <text class="info-value">¥{{orderInfo.amount.grossProfit}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">订单总金额：</text>
+          <text class="info-value">¥{{orderInfo.amount.total}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">已付定金：</text>
+          <text class="info-value">¥{{orderInfo.amount.deposit}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">待付尾款：</text>
+          <text class="info-value">¥{{orderInfo.amount.balance}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 备注信息 -->
+  <view class="remark-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">📝</text>
+        <text class="section-title">备注信息</text>
+      </view>
+      <view class="remark-content">
+        <text class="remark-text">{{orderInfo.notes || '暂无备注信息'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单二维码 -->
+  <view class="product-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">🔗</text>
+        <text class="section-title">订单二维码</text>
+      </view>
+      <view class="product-content" style="display:flex;justify-content:center;align-items:center;">
+        <image src="{{qrCodeUrl}}" mode="aspectFit" style="width:240rpx;height:240rpx;border-radius:8rpx;" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 附件信息 -->
+  <view class="attachment-section">
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-icon">📎</text>
+        <text class="section-title">附件图纸</text>
+        <text class="section-subtitle">共 {{orderInfo.attachments.length || 0}} 个文件</text>
+      </view>
+      <view class="attachment-content">
+        <view class="attachment-list" wx:if="{{orderInfo.attachments.length > 0}}">
+          <view class="attachment-item" wx:for="{{orderInfo.attachments}}" wx:key="id" wx:for-item="attachment" wx:for-index="index">
+            <view class="attachment-info">
+              <text class="attachment-name">{{attachment.name}}</text>
+              <text class="attachment-type">{{attachment.type === 'drawing' ? '图纸文件' : '普通文件'}}</text>
+            </view>
+            <view class="attachment-actions">
+              <button class="download-btn" size="mini" bindtap="onDownloadAttachment" data-fileid="{{attachment.fileID}}" data-url="{{attachment.url}}" data-name="{{attachment.name}}">查看</button>
+            </view>
+          </view>
+        </view>
+        <view class="empty-state" wx:else>
+          <text class="empty-text">暂无附件图纸</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-section">
+    <button class="action-btn edit-btn" bindtap="onEditOrder">编辑订单</button>
+    <button class="action-btn print-btn" bindtap="onPrintOrder">打印施工单</button>
+    <button class="action-btn delete-btn" bindtap="onDeleteOrder">删除订单</button>
+  </view>
+</view>

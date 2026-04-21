@@ -1,0 +1,280 @@
+<!-- 订单管理页面 -->
+<view class="order-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">📋</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">订单管理</text>
+        <text class="sub-title">高效管理您的订单流程</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计卡片区 -->
+  <view class="statistics-grid">
+    <view class="stat-card" bindtap="onStatCardTap" data-type="month">
+      <view class="stat-icon completed-icon">📅</view>
+      <view class="stat-content">
+        <text class="stat-number">{{monthOrders}}</text>
+        <text class="stat-label">本月订单</text>
+      </view>
+    </view>
+    
+    <view class="stat-card" bindtap="onStatCardTap" data-type="ordered">
+      <view class="stat-icon waiting-icon">🧾</view>
+      <view class="stat-content">
+        <text class="stat-number">{{orderedOrders}}</text>
+        <text class="stat-label">已下单</text>
+      </view>
+    </view>
+
+    <view class="stat-card" bindtap="onStatCardTap" data-type="pending">
+      <view class="stat-icon waiting-icon">⏳</view>
+      <view class="stat-content">
+        <text class="stat-number">{{pendingOrders}}</text>
+        <text class="stat-label">待生产</text>
+      </view>
+    </view>
+    
+    <view class="stat-card" bindtap="onStatCardTap" data-type="processing">
+      <view class="stat-icon producing-icon">🔄</view>
+      <view class="stat-content">
+        <text class="stat-number">{{processingOrders}}</text>
+        <text class="stat-label">生产中</text>
+      </view>
+    </view>
+    
+    <view class="stat-card" bindtap="onStatCardTap" data-type="stocked">
+      <view class="stat-icon completed-icon">✅</view>
+      <view class="stat-content">
+        <text class="stat-number">{{stockedOrders}}</text>
+        <text class="stat-label">已入库</text>
+      </view>
+    </view>
+    
+    
+
+  </view>
+
+  <!-- 快捷功能区 -->
+  <view class="quick-functions">
+    <view class="function-card" bindtap="onScanQuery">
+      <view class="function-icon">📱</view>
+      <view class="function-content">
+        <text class="function-title">扫码查询</text>
+        <text class="function-desc">扫描订单二维码快速查询</text>
+      </view>
+      <view class="function-arrow">→</view>
+    </view>
+
+    <view class="function-card" bindtap="onQuickFilter">
+      <view class="function-icon">🔍</view>
+      <view class="function-content">
+        <text class="function-title">快捷筛选</text>
+        <text class="function-desc">快速按日期筛选订单</text>
+      </view>
+      <view class="function-arrow">→</view>
+    </view>
+  </view>
+
+  <!-- 搜索区域 -->
+  <view class="search-section">
+    <view class="search-card">
+      <view class="search-icon">🔍</view>
+      <input 
+        class="search-input" 
+        placeholder="搜索订单号、客户名称、产品类别..."
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <view wx:if="{{searchKeyword}}" class="clear-btn" bindtap="clearSearch">
+        <text class="clear-icon">✕</text>
+      </view>
+    </view>
+    <view class="filter-section">
+      <view class="status-tabs">
+        <!-- 排序和方向按钮已移除 -->
+      </view>
+    </view>
+  </view>
+
+    <!-- 订单列表 -->
+  <view class="order-section">
+    <view class="material-toolbar">
+      <view class="toolbar-left">
+        <block wx:if="{{!selectionMode}}">
+          <text class="toolbar-title">订单列表</text>
+        </block>
+        <block wx:else>
+          <view class="toolbar-info">
+            <text class="toolbar-title">打印勾选</text>
+            <view class="count-chip">
+              <text class="btn-icon">✔</text>
+              <text class="chip-text">已勾选 {{selectedCount}} 单</text>
+            </view>
+          </view>
+        </block>
+      </view>
+      <view class="toolbar-actions">
+        <block wx:if="{{!selectionMode}}">
+          <view class="toolbar-btn enter-btn" bindtap="enterPrintSelection">
+            <text>打印施工单</text>
+          </view>
+        </block>
+        <view wx:else class="action-wrap">
+          <view class="toolbar-btn confirm-btn" bindtap="goToPrintPreview">
+            <text class="btn-icon">🖨</text>
+            <text>打印预览</text>
+          </view>
+          <view class="toolbar-btn cancel-btn" bindtap="exitSelectionMode">
+            <text class="btn-icon">✕</text>
+            <text>取消</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <scroll-view 
+      class="order-list" 
+      scroll-y 
+      refresher-enabled="{{true}}"
+      refresher-triggered="{{isRefreshing}}"
+      bindrefresherrefresh="onRefresh"
+      bindscrolltolower="onLoadMore"
+    >
+      <!-- 空状态 -->
+      <view wx:if="{{filteredOrders.length === 0 && !isLoading}}" class="empty-state">
+        <image class="empty-image" src="/images/sample-drawing.jpg" mode="aspectFit"/>
+        <text class="empty-text">暂无{{currentTabName}}订单</text>
+        <button class="empty-btn" bindtap="goToCreate">
+          <text class="btn-icon">➕</text>
+          <text>立即创建</text>
+        </button>
+      </view>
+
+      <!-- 订单卡片 -->
+      <view wx:else class="order-cards">
+        <view 
+          wx:for="{{filteredOrders}}" 
+          wx:key="index" 
+          class="order-card"
+          hover-class="order-card-hover"
+          hover-start-time="20"
+          hover-stay-time="120"
+          bindtap="goToDetail"
+          data-id="{{item._id || item.orderNo || item.orderNumber || item.id}}"
+          data-orderno="{{item.orderNo || item.orderNumber}}"
+          data-index="{{index}}"
+        >
+          <view class="press-overlay"></view>
+          <!-- 完善订单信息 - 包含金额和来料标签 -->
+        <view class="order-header">
+          <view class="order-info">
+            <view class="order-number-row">
+              <text class="order-number">{{item.orderNo}}</text>
+              <text wx:if="{{item.priority === 'urgent'}}" class="urgent-tag">急</text>
+            </view>
+          <view class="customer-row">
+            <text class="customer-label">客户：</text>
+            <text class="customer-name">{{item.shortName || item.customerName}}</text>
+          </view>
+          <view class="customer-row">
+            <text class="customer-label">产品类别：</text>
+            <text class="customer-name">{{item.productName || '无'}}</text>
+          </view>
+          </view>
+          <view class="right-column">
+            <view class="order-status {{item.statusClass}}">
+              {{item.statusText}}
+            </view>
+            <view wx:if="{{selectionMode}}" class="select-box {{selectedMap[item.orderNo] ? 'selected' : ''}}" data-orderno="{{item.orderNo}}" catchtap="toggleSelectOrder">
+              <text class="select-checkmark">✔</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 规格尺寸、数量、单价、金额 -->
+        <view class="order-details">
+          <view class="spec-line" wx:if="{{item.spec || (item.boardWidth && item.boardHeight)}}">
+            <text class="spec-label">规格：</text>
+            <text class="spec-value">{{item.spec || (item.boardWidth + '×' + item.boardHeight + 'mm')}}</text>
+          </view>
+          <view class="spec-line">
+            <text class="spec-label">商品名称：</text>
+            <text class="spec-value">{{item.goodsName || '无'}}</text>
+          </view>
+          <view class="spec-line">
+            <text class="spec-label">物料号：</text>
+            <text class="spec-value">{{item.materialNo || '无'}}</text>
+          </view>
+          <view wx:if="{{currentTab === 'stocked'}}" class="quantity-line">
+            <text class="quantity-info">库存数量：{{item.stockedQty}}</text>
+          </view>
+          <view wx:if="{{currentTab === 'shipping'}}" class="quantity-line">
+            <text class="quantity-info">发货数量：{{item.shippedQty}}</text>
+          </view>
+          <view class="quantity-amount-module">
+            <view class="qam-row">
+              <view class="qam-item">
+                <text class="qam-label">订单数量</text>
+                <text class="qam-value">{{item.quantityDisplay}}</text>
+              </view>
+              <view class="qam-item">
+                <text class="qam-label">下单片数</text>
+                <text class="qam-value">{{item.sheetCountDisplay}}</text>
+              </view>
+            </view>
+            <view class="qam-row">
+              <view class="qam-item">
+                <text class="qam-label">单价</text>
+                <text class="qam-value">{{item.unitPriceDisplay}}</text>
+              </view>
+              <view class="qam-item">
+                <text class="qam-label">原材料单价</text>
+                <text class="qam-value">{{item.rawUnitPriceDisplay}}</text>
+              </view>
+            </view>
+            <view class="qam-row">
+              <view class="qam-item">
+                <text class="qam-label">毛利润</text>
+                <text class="qam-value">{{item.grossProfitDisplay}}</text>
+              </view>
+              <view class="qam-item">
+                <text class="qam-label">订单金额</text>
+                <text class="qam-value">{{item.orderAmountDisplay}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 下单时间 -->
+        <view class="create-time-section">
+          <view class="create-time-row">
+            <text class="create-time-label">下单时间：</text>
+            <text class="create-time-value">{{item.createTime}}</text>
+          </view>
+        </view>
+          
+          <!-- 操作按钮区域移除，避免遮挡卡片点击 -->
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view wx:if="{{isLoadingMore}}" class="loading-more">
+        <text>加载中...</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 悬浮创建按钮 -->
+  <view class="floating-create-btn" bindtap="goToCreate">
+    <view class="btn-text-grid">
+      <text class="btn-text-line">创建</text>
+      <text class="btn-text-line">订单</text>
+    </view>
+  </view>
+</view>

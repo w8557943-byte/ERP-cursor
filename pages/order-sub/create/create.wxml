@@ -1,0 +1,494 @@
+<!-- 订单创建页面 -->
+<view class="create-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+  </view>
+  
+
+  <form bindsubmit="submitOrder" class="order-form">
+    <!-- 客户信息 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">👤</text>
+          <text class="section-title">客户信息</text>
+        </view>
+        <view class="form-content" style="padding-top: 0;">
+          <view class="form-group">
+            <text class="form-label">订单编号</text>
+            <view class="amount-display">{{orderNumber}}</view>
+          </view>
+        </view>
+        <view class="form-content">
+          <!-- 客户信息部分 -->
+          <view class="form-group">
+            <text class="form-label">客户名称 <text class="required">*</text></text>
+            <picker mode="selector" range="{{customerNames}}" bindchange="onCustomerPickerChange">
+              <view class="picker-input">
+                {{formData.customer.name || '请选择客户名称'}}
+              </view>
+            </picker>
+            <view class="field-error" wx:if="{{customerError}}">
+              {{customerError}}
+            </view>
+          </view>
+          
+        </view>
+      </view>
+    </view>
+
+    <!-- 产品信息 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">📦</text>
+          <text class="section-title">产品信息</text>
+        </view>
+        <view class="form-content">
+          <!-- 产品信息部分 -->
+          <view class="form-group">
+            <text class="form-label">产品类别 <text class="required">*</text></text>
+            <picker mode="selector" range="{{productPresets}}" bindchange="onProductPresetChange">
+              <view class="picker-input">{{formData.product.name || '请选择产品类别'}}</view>
+            </picker>
+            <input 
+              wx:if="{{creatingNewProduct}}"
+              class="form-input" 
+              placeholder="请输入产品类别"
+              name="productName"
+              value="{{formData.product.name}}"
+              focus="{{creatingNewProduct}}"
+              bindinput="onProductInput"
+              bindblur="onProductBlur"
+              data-field="product.name"
+              placeholder-class="placeholder"
+            />
+          </view>
+          <view class="form-group">
+            <text class="form-label">产品规格 (mm) <text class="required">*</text></text>
+            <input 
+              class="form-input" 
+              placeholder="请输入产品规格"
+              name="productSpec"
+              value="{{formData.product.spec}}"
+              bindinput="onInputChange"
+              data-field="product.spec"
+              placeholder-class="placeholder"
+            />
+          </view>
+          <view class="form-group">
+            <text class="form-label">供应商 <text class="required">*</text></text>
+            <picker mode="selector" range="{{supplierNames}}" bindchange="onSupplierPickerChange">
+              <view class="picker-input">
+                {{formData.supplier.name || '请选择供应商'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-row">
+            <view class="form-group half">
+              <text class="form-label">楞型 <text class="required">*</text></text>
+              <picker mode="selector" range="{{flutePresets}}" bindchange="onFlutePresetChange">
+                <view class="picker-input">{{formData.product.flute || '请选择楞型'}}</view>
+              </picker>
+              <input wx:if="{{creatingNewFlute}}" class="form-input" placeholder="请输入楞型" value="{{formData.product.flute}}" bindinput="onInputChange" data-field="product.flute" />
+            </view>
+            <view class="form-group half">
+              <text class="form-label">材质编码 <text class="required">*</text></text>
+              <input 
+                class="form-input" 
+                placeholder="请输入材质编码"
+                name="productMaterialCode"
+                value="{{formData.product.materialCode}}"
+                bindinput="onInputChange"
+                data-field="product.materialCode"
+                placeholder-class="placeholder"
+              />
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">纸板尺寸 (mm) <text class="required">*</text></text>
+            <view class="form-row" style="gap: 20rpx;">
+              <input 
+                type="number" 
+                class="form-input size-input" 
+                placeholder="门幅"
+                value="{{formData.product.boardWidth}}"
+                bindinput="onInputChange"
+                data-field="product.boardWidth"
+              />
+              <text style="width: 20rpx; text-align: center; line-height: 80rpx; font-size: 32rpx; color: #666;">×</text>
+              <input 
+                  type="number" 
+                  class="form-input size-input" 
+                  placeholder="长度"
+                  value="{{formData.product.boardHeight}}"
+                  bindinput="onInputChange"
+                  data-field="product.boardHeight"
+                />
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">压线方式</text>
+            <picker mode="selector" range="{{creasingHistory}}" bindchange="onCreasingPresetChange">
+              <view class="picker-input">{{formData.product.creasing || '请选择压线方式'}}</view>
+            </picker>
+            <input wx:if="{{creatingNewCreasing}}" class="form-input" placeholder="请输入压线方式" value="{{formData.product.creasing}}" bindinput="onInputChange" data-field="product.creasing" />
+          </view>
+          
+          
+          <!-- 压线尺寸 -->
+          <view class="form-group">
+            <text class="form-label">压线尺寸 (mm)</text>
+            <view class="form-row" style="gap: 12rpx;">
+              <input 
+                type="number" 
+                class="form-input triple-size-input {{isNoCreasing ? 'disabled-input' : ''}}" 
+                placeholder="尺寸1"
+                value="{{formData.product.creasingSize1}}"
+                bindinput="onCreasingSizeInput"
+                data-field="product.creasingSize1"
+                disabled="{{isNoCreasing}}"
+              />
+              <text style="width: 20rpx; text-align: center; line-height: 80rpx; font-size: 32rpx; color: #666;">-</text>
+              <input 
+                type="number" 
+                class="form-input triple-size-input {{isNoCreasing ? 'disabled-input' : ''}}" 
+                placeholder="尺寸2"
+                value="{{formData.product.creasingSize2}}"
+                bindinput="onCreasingSizeInput"
+                data-field="product.creasingSize2"
+                disabled="{{isNoCreasing}}"
+              />
+              <text style="width: 20rpx; text-align: center; line-height: 80rpx; font-size: 32rpx; color: #666;">-</text>
+              <input 
+                type="number" 
+                class="form-input triple-size-input {{isNoCreasing ? 'disabled-input' : ''}}" 
+                placeholder="尺寸3"
+                value="{{formData.product.creasingSize3}}"
+                bindinput="onInputChange"
+                data-field="product.creasingSize3"
+                disabled="{{isNoCreasing}}"
+              />
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">拼接方式</text>
+            <picker mode="selector" range="{{joinMethodPresets}}" bindchange="onJoinMethodPresetChange">
+              <view class="picker-input">{{formData.joinMethod || '请选择拼接方式'}}</view>
+            </picker>
+            <input wx:if="{{creatingNewJoin}}" class="form-input" placeholder="请输入拼接方式" value="{{formData.joinMethod}}" bindinput="onInputChange" data-field="joinMethod" />
+          </view>
+          <view class="form-group">
+            <text class="form-label">商品名称</text>
+            <input 
+              class="form-input" 
+              placeholder="请输入商品名称"
+              name="productTitle"
+              value="{{formData.product.title}}"
+              bindinput="onInputChange"
+              data-field="product.title"
+              placeholder-class="placeholder"
+            />
+          </view>
+          <view class="form-group">
+            <text class="form-label">物料号</text>
+            <input 
+              class="form-input" 
+              placeholder="请输入物料号"
+              name="productMaterialNo"
+              value="{{formData.product.materialNo}}"
+              bindinput="onInputChange"
+              data-field="product.materialNo"
+              placeholder-class="placeholder"
+            />
+          </view>
+          <view class="form-row">
+            <view class="form-group half">
+              <text class="form-label">数量 <text class="required">*</text></text>
+              <input 
+                class="form-input" 
+                placeholder="请输入数量"
+                name="productQuantity"
+                type="number"
+                value="{{formData.product.quantity || ''}}"
+                bindinput="onInputChange"
+                data-field="product.quantity"
+                placeholder-class="placeholder"
+              />
+            </view>
+            <view class="form-group half">
+              <text class="form-label">单位</text>
+              <input 
+                class="form-input" 
+                placeholder="请输入单位"
+                name="productUnit"
+                value="{{formData.product.unit}}"
+                bindinput="onInputChange"
+                data-field="product.unit"
+                placeholder-class="placeholder"
+              />
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">下单片数</text>
+            <input 
+              class="form-input" 
+              placeholder="请输入片数(片)"
+              name="productSheetCount"
+              type="number"
+              value="{{formData.product.sheetCount || ''}}"
+              bindinput="onInputChange"
+              data-field="product.sheetCount"
+              placeholder-class="placeholder"
+            />
+          </view>
+          <view class="form-group">
+            <text class="form-label">单价 (元) <text class="required">*</text></text>
+            <input 
+              class="form-input" 
+              placeholder="请输入单价"
+              name="productUnitPrice"
+              type="digit"
+              value="{{formData.product.unitPrice || ''}}"
+              bindinput="onInputChange"
+              data-field="product.unitPrice"
+              placeholder-class="placeholder"
+            />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 金额信息 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">💰</text>
+          <text class="section-title">金额信息</text>
+        </view>
+        <view class="form-content">
+          <view class="form-group">
+            <text class="form-label">订单总金额</text>
+            <view class="amount-display">¥{{calculatedAmount}}</view>
+          </view>
+          <view class="form-row">
+            <view class="form-group half">
+              <text class="form-label">已付定金</text>
+              <input 
+                class="form-input" 
+                placeholder="请输入定金"
+                name="deposit"
+                type="digit"
+                value="{{formData.amount.deposit || ''}}"
+                bindinput="onInputChange"
+                data-field="amount.deposit"
+                placeholder-class="placeholder"
+              />
+            </view>
+            <view class="form-group half">
+              <text class="form-label">待付尾款</text>
+              <view class="amount-display">¥{{calculatedBalance}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 时间信息 -->
+    <view class="form-section">
+      <view class="section-card" style="background: #e6f4ff;">
+        <view class="section-header">
+          <text class="section-icon">⏰</text>
+          <text class="section-title">时间信息</text>
+        </view>
+        <view class="form-content">
+          <view class="form-row">
+            <!-- 优先级输入 -->
+            <view class="form-group half">
+              <text class="form-label">优先级</text>
+              <input 
+                class="form-input" 
+                placeholder="请输入优先级"
+                name="priority"
+                value="{{formData.priority === 'urgent' ? '急' : '正常'}}"
+                bindinput="onPriorityInput"
+                bindfocus="onPriorityFocus"
+                bindblur="onPriorityBlur"
+                placeholder-class="placeholder"
+              />
+              <!-- 自动补全列表 -->
+              <view class="autocomplete-list" wx:if="{{showPriorityAutocomplete}}">
+                <view 
+                  class="autocomplete-item" 
+                  wx:for="{{simplePriorities}}" 
+                  wx:key="index"
+                  bindtap="onPrioritySelect"
+                  data-priority="{{item}}"
+                >
+                  {{item}}
+                </view>
+              </view>
+            </view>
+            <view class="form-group half">
+              <text class="form-label">交货日期</text>
+              <picker 
+                mode="date"
+                bindchange="onDateChange"
+                value="{{formData.deliveryDate}}"
+                start="{{today}}"
+                data-field="deliveryDate"
+              >
+                <view class="picker-input">
+                  {{formData.deliveryDate || '请选择交货日期'}}
+                </view>
+              </picker>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+
+
+    <!-- 备注信息 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">📝</text>
+          <text class="section-title">备注信息</text>
+        </view>
+        <view class="form-content">
+          <view class="form-group">
+            <text class="form-label">备注</text>
+            <textarea 
+              class="form-textarea" 
+              placeholder="请输入订单备注信息..."
+              name="notes"
+              value="{{formData.notes}}"
+              bindinput="onInputChange"
+              data-field="notes"
+              maxlength="500"
+              placeholder-class="placeholder"
+            />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 附件上传 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">🖼️</text>
+          <text class="section-title">附件资料</text>
+        </view>
+        <view class="form-content">
+          <view class="upload-section">
+            <button 
+              class="upload-btn" 
+              bindtap="uploadAttachment"
+              type="primary"
+              plain="true"
+            >
+              上传附件
+            </button>
+            <view class="attachment-list" wx:if="{{formData.attachments.length}}">
+              <view 
+                class="attachment-item" 
+                wx:for="{{formData.attachments}}" 
+                wx:key="index"
+              >
+                <image 
+                  class="attachment-thumb" 
+                  src="{{item.url}}" 
+                  mode="aspectFill"
+                  wx:if="{{item.type === 'drawing'}}"
+                />
+                <view class="attachment-info">
+                  <text class="attachment-name">{{item.name}}</text>
+                  <text class="attachment-type">{{item.type === 'drawing' ? '图纸' : '文件'}}</text>
+                </view>
+                <button 
+                  class="remove-btn" 
+                  bindtap="removeAttachment"
+                  data-index="{{index}}"
+                >
+                  ×
+                </button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 订单二维码 -->
+    <view class="form-section">
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-icon">🔗</text>
+          <text class="section-title">订单二维码</text>
+        </view>
+        <view class="form-content" style="display:flex;justify-content:center;align-items:center;">
+          <image src="{{qrCodeUrl}}" mode="aspectFit" style="width:200rpx;height:200rpx;border-radius:8rpx;" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button 
+        class="action-btn cancel-btn" 
+        bindtap="onCancel"
+        type="default"
+        plain="true"
+      >
+        取消
+      </button>
+      <button 
+        class="action-btn create-btn" 
+        formType="submit"
+        type="primary"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+      >
+        {{isEdit ? '更新订单' : '创建订单'}}
+      </button>
+    </view>
+  </form>
+</view>
+  <!-- 预设选择器弹层：楞型 -->
+  <view class="picker-overlay" wx:if="{{showFlutePicker}}" bindtap="closeFlutePicker">
+    <view class="picker-container" catchtap="noop">
+      <view class="picker-title" style="text-align:center;padding:20rpx;">选择楞型</view>
+      <picker-view indicator-style="height: 60rpx" value="{{[flutePickerIndex]}}" bindchange="onFlutePickerChange" class="picker-view">
+        <picker-view-column>
+          <view wx:for="{{flutePresets}}" wx:key="*this" class="picker-item {{index === flutePickerIndex ? 'active' : ''}}">{{item}}</view>
+        </picker-view-column>
+      </picker-view>
+    </view>
+  </view>
+
+  <!-- 预设选择器弹层：压线方式 -->
+  <view class="picker-overlay" wx:if="{{showCreasingPicker}}" bindtap="closeCreasingPicker">
+    <view class="picker-container" catchtap="noop">
+      <view class="picker-title" style="text-align:center;padding:20rpx;">选择压线方式</view>
+      <picker-view indicator-style="height: 60rpx" value="{{[creasingPickerIndex]}}" bindchange="onCreasingPickerChange" class="picker-view">
+        <picker-view-column>
+          <view wx:for="{{creasingHistory}}" wx:key="*this" class="picker-item {{index === creasingPickerIndex ? 'active' : ''}}">{{item}}</view>
+        </picker-view-column>
+      </picker-view>
+    </view>
+  </view>
+
+  <!-- 预设选择器弹层：拼接方式 -->
+  <view class="picker-overlay" wx:if="{{showJoinPicker}}" bindtap="closeJoinPicker">
+    <view class="picker-container" catchtap="noop">
+      <view class="picker-title" style="text-align:center;padding:20rpx;">选择拼接方式</view>
+      <picker-view indicator-style="height: 60rpx" value="{{[joinPickerIndex]}}" bindchange="onJoinPickerChange" class="picker-view">
+        <picker-view-column>
+          <view wx:for="{{joinMethodPresets}}" wx:key="*this" class="picker-item {{index === joinPickerIndex ? 'active' : ''}}">{{item}}</view>
+        </picker-view-column>
+      </picker-view>
+    </view>
+  </view>

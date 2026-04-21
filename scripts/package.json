@@ -1,0 +1,35 @@
+{
+  "name": "erp-sync-demo",
+  "version": "1.0.0",
+  "description": "荣禾ERP数据同步演示脚本",
+  "main": "syncDemo.js",
+  "type": "module",
+  "scripts": {
+    "demo": "node syncDemo.js",
+    "demo:watch": "nodemon syncDemo.js",
+    "demo:prod": "cross-env NODE_ENV=production node syncDemo.js",
+    "demo:mock": "cross-env ENABLE_REAL_API=false node syncDemo.js",
+    "demo:debug": "cross-env DEBUG=sync:* node syncDemo.js",
+    "demo:performance": "node performanceTest.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "chalk": "^5.3.0",
+    "mongodb-memory-server": "^10.3.0",
+    "mongoose": "^9.0.0",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.0",
+    "nodemon": "^3.0.0"
+  },
+  "keywords": [
+    "ERP",
+    "数据同步",
+    "演示",
+    "小程序",
+    "云开发"
+  ],
+  "author": "荣禾ERP团队",
+  "license": "MIT"
+}

@@ -1,0 +1,96 @@
+<view class="product-selector" wx:if="{{show}}">
+  <view class="selector-overlay" bindtap="cancel">
+    <view class="selector-content" catchtap="">
+      <view class="selector-header">
+        <text class="selector-title">选择产品</text>
+        <button class="close-btn" bindtap="cancel">×</button>
+      </view>
+      
+      <!-- 筛选栏 -->
+      <view class="filter-bar">
+        <view class="search-box">
+          <input class="search-input" 
+                 placeholder="搜索产品类别或编号" 
+                 value="{{searchText}}" 
+                 bindinput="onSearch" />
+          <text class="search-icon">🔍</text>
+        </view>
+        
+        <view class="filter-controls">
+          <picker mode="selector" range="{{categories}}" bindchange="onCategoryChange">
+            <view class="filter-picker">
+              <text class="filter-text">{{selectedCategory || '全部分类'}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+          
+          <picker mode="selector" range="{{['按名称', '按价格', '按时间']}}" bindchange="onSortChange">
+            <view class="filter-picker">
+              <text class="filter-text">{{sortBy === 'name' ? '按名称' : sortBy === 'price' ? '按价格' : '按时间'}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+      
+      <!-- 产品列表 -->
+      <view class="product-list">
+        <!-- 加载状态 -->
+        <view class="loading" wx:if="{{loading}}">
+          <text>加载中...</text>
+        </view>
+        
+        <!-- 空状态 -->
+        <view class="empty" wx:elif="{{filteredProducts.length === 0 && !loading}}">
+          <text class="empty-text">{{searchText ? '未找到匹配的产品' : '暂无产品数据'}}</text>
+          <text class="empty-tip">请先在产品管理中添加产品</text>
+        </view>
+        
+        <!-- 产品列表 -->
+        <view class="product-grid" wx:else>
+          <view class="product-card" 
+                wx:for="{{filteredProducts}}" 
+                wx:key="id"
+                bindtap="selectProduct" 
+                data-product="{{item}}">
+            
+            <view class="product-image">
+              <image class="product-img" 
+                     src="{{item.image || '/static/images/default-product.png'}}" 
+                     mode="aspectFill"></image>
+            </view>
+            
+            <view class="product-info">
+              <text class="product-name">{{item.name}}</text>
+              <text class="product-code" wx:if="{{item.code}}">编号: {{item.code}}</text>
+              
+              <view class="product-specs" wx:if="{{item.specifications}}">
+                <text class="spec-item" wx:for="{{item.specifications}}" wx:key="*this">
+                  {{item}}
+                </text>
+              </view>
+              
+              <view class="product-meta">
+                <text class="product-category" wx:if="{{item.category}}">{{item.category}}</text>
+                <text class="product-unit">{{item.unit || '个'}}</text>
+              </view>
+              
+              <view class="product-price">
+                <text class="price-label">单价：</text>
+                <text class="price-value">¥{{item.price || 0}}</text>
+                <text class="price-unit">/{{item.unit || '个'}}</text>
+              </view>
+              
+              <view class="product-stock">
+                <text class="stock-label">库存：</text>
+                <text class="stock-value {{item.stock > 50 ? 'sufficient' : item.stock > 0 ? 'low' : 'out'}}">
+                  {{item.stock || 0}}{{item.unit || '个'}}
+                </text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

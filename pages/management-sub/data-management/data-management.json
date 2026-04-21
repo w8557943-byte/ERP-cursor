@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "数据管理",
+  "navigationBarBackgroundColor": "#4f46e5",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "ec-canvas": "/pages/management-sub/components/ec-canvas/ec-canvas"
+  }
+}

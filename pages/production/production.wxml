@@ -1,0 +1,269 @@
+<wxs module="statusHelper">
+  var getStatusText = function(status) {
+    var s = (status || '').toString().toLowerCase();
+    if (s === 'ordered') return '已下单';
+    if (s === 'pending') return '待生产';
+    if (s === 'processing') return '生产中';
+    if (s === 'stocked') return '已入库';
+    if (s === 'shipping' || s === 'shipped') return '已发货';
+    return '已下单';
+  };
+  var getStatusClass = function(status) {
+    var s = (status || '').toString().toLowerCase();
+    if (s === 'ordered') return 'status-ordered';
+    if (s === 'pending') return 'status-pending';
+    if (s === 'processing') return 'status-processing';
+    if (s === 'stocked') return 'status-stocked';
+    if (s === 'shipping' || s === 'shipped') return 'status-shipping';
+    return 'status-ordered';
+  };
+  module.exports = {
+    getStatusText: getStatusText,
+    getStatusClass: getStatusClass
+  };
+</wxs>
+<view class="production-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon">
+        <text class="icon-text">🏭</text>
+      </view>
+      <view class="header-info">
+        <text class="main-title">生产管理</text>
+        <text class="sub-title">工单进度跟踪</text>
+      </view>
+      <view class="header-scan-btn" bindtap="onScanButtonClick">
+        <image class="header-scan-icon" src="/images/scan-icon.png" />
+        <text class="header-scan-text">扫一扫</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showCompleteDialog}}" class="dialog-mask">
+    <view class="dialog-panel">
+      <view class="dialog-title">印刷完成</view>
+      <view class="dialog-body">
+        <view class="dialog-row"><text class="dialog-label">客户名称</text><text class="dialog-value">{{completeDialog.customer}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">规格尺寸</text><text class="dialog-value">{{completeDialog.spec}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">纸板尺寸</text><text class="dialog-value">{{completeDialog.paperSize || '-'}} </text></view>
+        <view class="dialog-row"><text class="dialog-label">材质编码</text><text class="dialog-value">{{completeDialog.materialCode || '-'}} </text></view>
+        <view class="dialog-row"><text class="dialog-label">愣行</text><text class="dialog-value">{{completeDialog.fluteType || '-'}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">压线尺寸</text><text class="dialog-value">{{completeDialog.creaseText || '-'}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">订单数量</text><text class="dialog-value">{{completeDialog.totalQty}}</text></view>
+        <view class="dialog-row">
+          <text class="dialog-label">图纸预览</text>
+          <button class="preview-btn" bindtap="previewDrawing">预览</button>
+        </view>
+        <view class="dialog-row"><text class="dialog-label">已完成</text><text class="dialog-value">{{completeDialog.currentProduced}}/{{completeDialog.totalQty}}</text></view>
+        <view class="dialog-input-row">
+          <input class="dialog-input" type="number" placeholder="输入本次完成数量" bindinput="onCompleteQtyInput" value="{{completeDialog.inputQty}}"/>
+        </view>
+      </view>
+      <view class="dialog-actions">
+        <button class="btn-secondary" bindtap="cancelComplete">取消</button>
+        <button class="btn-primary" bindtap="confirmComplete">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showStockDialog}}" class="dialog-mask">
+    <view class="dialog-panel">
+      <view class="dialog-title">入库确认</view>
+      <view class="dialog-body">
+        <view class="dialog-row"><text class="dialog-label">客户</text><text class="dialog-value">{{stockDialog.customer}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">规格</text><text class="dialog-value">{{stockDialog.spec}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">商品名称</text><text class="dialog-value">{{stockDialog.productName || '无'}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">物料号</text><text class="dialog-value">{{stockDialog.materialNo || '无'}} </text></view>
+        <view class="dialog-row"><text class="dialog-label">订单数</text><text class="dialog-value">{{stockDialog.orderQty}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">印刷完成</text><text class="dialog-value">{{stockDialog.completedQty || 0}}</text></view>
+        <view class="dialog-input-row">
+          <input class="dialog-input" type="number" placeholder="实际入库数量" bindinput="onStockQtyInput" value="{{stockDialog.inputQty}}"/>
+        </view>
+      </view>
+      <view class="dialog-actions">
+        <button class="btn-secondary" bindtap="cancelStock">取消</button>
+        <button class="btn-primary" bindtap="confirmStockIn">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showShipmentDialog}}" class="dialog-mask">
+    <view class="dialog-panel">
+      <view class="dialog-title">发货确认</view>
+      <view class="dialog-body">
+        <view class="dialog-row"><text class="dialog-label">客户</text><text class="dialog-value">{{shipmentDialog.customer}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">规格</text><text class="dialog-value">{{shipmentDialog.spec}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">订单数</text><text class="dialog-value">{{shipmentDialog.orderQty}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">入库数</text><text class="dialog-value">{{shipmentDialog.stockedQty || 0}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">商品名称</text><text class="dialog-value">{{shipmentDialog.productName || '无'}}</text></view>
+        <view class="dialog-row"><text class="dialog-label">物料号</text><text class="dialog-value">{{shipmentDialog.materialNo || '无'}} </text></view>
+        <view class="dialog-row"><text class="dialog-label">本次发货</text><text class="dialog-value">{{shipmentDialog.inputQty || ''}}</text></view>
+        <view class="dialog-input-row">
+          <input class="dialog-input" type="number" placeholder="{{shipmentDialog.inputPlaceholder || '请输入本次发货数量'}}" disabled="{{shipmentDialog.inputDisabled}}" bindinput="onShipQtyInput" value="{{shipmentDialog.inputQty}}"/>
+        </view>
+      </view>
+      <view class="dialog-actions">
+        <button class="btn-secondary" bindtap="cancelShipment">取消</button>
+        <button class="btn-primary" bindtap="confirmShipment">确认</button>
+      </view>
+    </view>
+  </view>
+  <view class="statistics-grid">
+    <view class="stat-card processing">
+      <view class="stat-number">{{statistics.processing}}</view>
+      <view class="stat-label">生产中</view>
+    </view>
+    <view class="stat-card warehouse">
+      <view class="stat-number">{{warehouseCount}}</view>
+      <view class="stat-label">已入库</view>
+    </view>
+    <view class="stat-card complete">
+      <view class="stat-number">{{completionRate}}<text class="stat-unit">%</text></view>
+      <view class="stat-label">完成率</view>
+    </view>
+    <view class="stat-card time">
+      <view class="stat-number">{{avgDeliveryDays}}<text class="stat-unit">天</text></view>
+      <view class="stat-label">完工时间</view>
+    </view>
+  </view>
+
+  
+
+  <view class="scan-cards-grid">
+    <view class="scan-card start" bindtap="startProductionScan">
+      <view class="scan-icon-wrap">
+        <view class="scan-icon-ring start"></view>
+        <image class="scan-icon" src="/images/scan-start.png" mode="aspectFit" />
+      </view>
+      <view class="scan-text">
+        <view class="scan-title">开始生产</view>
+        <view class="scan-subtitle">扫一扫</view>
+      </view>
+      <view class="scan-accent start"></view>
+    </view>
+    <view class="scan-card print" bindtap="printCompleteScan">
+      <view class="scan-icon-wrap">
+        <view class="scan-icon-ring print"></view>
+        <image class="scan-icon" src="/images/scan-print.png" mode="aspectFit" />
+      </view>
+      <view class="scan-text">
+        <view class="scan-title">印刷完成</view>
+        <view class="scan-subtitle">扫码确认</view>
+      </view>
+      <view class="scan-accent print"></view>
+    </view>
+    <view class="scan-card stock" bindtap="scanStockIn">
+      <view class="scan-icon-wrap">
+        <view class="scan-icon-ring stock"></view>
+        <image class="scan-icon" src="/images/scan-stock.png" mode="aspectFit" />
+      </view>
+      <view class="scan-text">
+        <view class="scan-title">扫码入库</view>
+        <view class="scan-subtitle">入库登记</view>
+      </view>
+      <view class="scan-accent stock"></view>
+    </view>
+    <view class="scan-card ship" bindtap="scanShipment">
+      <view class="scan-icon-wrap">
+        <view class="scan-icon-ring ship"></view>
+        <image class="scan-icon" src="/images/scan-ship.png" mode="aspectFit" />
+      </view>
+      <view class="scan-text">
+        <view class="scan-title">扫码发货</view>
+        <view class="scan-subtitle">出库发货</view>
+      </view>
+      <view class="scan-accent ship"></view>
+    </view>
+  </view>
+
+  <view class="fixed-nav-bar {{isNavFixed ? 'fixed' : ''}}">
+    <view class="status-nav-bar">
+      <view class="status-bar">
+        <view class="segmented">
+          <view class="seg-item {{filterStatus === 'ordered' ? 'active' : ''}}" data-status="ordered" bindtap="filterOrders">已下单</view>
+          <view class="seg-item {{filterStatus === 'pending' ? 'active' : ''}}" data-status="pending" bindtap="filterOrders">待生产</view>
+          <view class="seg-item {{filterStatus === 'processing' ? 'active' : ''}}" data-status="processing" bindtap="filterOrders">生产中</view>
+          <view class="seg-item {{filterStatus === 'warehouse' ? 'active' : ''}}" data-status="warehouse" bindtap="filterOrders">已入库</view>
+          <view class="seg-item {{filterStatus === 'shipping' ? 'active' : ''}}" data-status="shipping" bindtap="filterOrders">已发货</view>
+        </view>
+        <view class="search-box">
+          <input class="search-input" placeholder="搜索订单号/客户/规格/产品" bindinput="onSearchInput" value="{{searchQuery}}"/>
+        </view>
+      </view>
+    </view>
+  </view>
+
+
+    <!-- 工单列表 -->
+  <scroll-view 
+    class="orders-list {{isNavFixed ? 'with-fixed' : ''}}" 
+    scroll-y 
+    refresher-enabled="{{true}}"
+    refresher-triggered="{{isRefreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+  >
+    <block wx:for="{{displayOrderList}}" wx:for-index="idx" wx:key="idx">
+      <view class="order-card" bindtap="viewDetail" data-orderno="{{item.orderNo}}">
+        <view class="order-header">
+      <view class="order-info">
+        <view class="order-number-row">
+          <text class="order-number">{{item.orderNo}}</text>
+          <text wx:if="{{item.urgent}}" class="urgent-tag">急</text>
+        </view>
+      </view>
+          <view class="order-status {{statusHelper.getStatusClass(item.status)}}">
+            {{statusHelper.getStatusText(item.status)}}
+          </view>
+        </view>
+        
+        <view class="order-details">
+          <view class="detail-item">
+            <text class="label">客户：</text>
+            <text class="value">{{item.customer}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">商品名称：</text>
+            <text class="value">{{item.goodsName || item.productName || '无'}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">规格：</text>
+            <text class="value">{{item.spec}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">物料号：</text>
+            <text class="value">{{item.materialNo || '无'}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">数量：</text>
+            <text class="value">{{item.producedQty}}/{{item.totalQty}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">进度：</text>
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{item.progress}}%"></view>
+            </view>
+            <text class="progress-text">{{item.progress}}%</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">预计：</text>
+            <text class="value">{{item.expectedTime}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 空状态 -->
+    <view wx:if="{{displayOrderList.length === 0 && !isLoading}}" class="empty-state">
+      <text class="empty-icon">📦</text>
+      <text class="empty-text">{{isUsingOrderData ? '暂无订单数据' : '暂无生产工单'}}</text>
+      <text class="empty-subtext" wx:if="{{isUsingOrderData}}">请在订单管理中创建订单，系统将自动同步到生产管理</text>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{isLoadingMore}}" class="loading-more">
+      <text>加载中...</text>
+    </view>
+  </scroll-view>
+</view>

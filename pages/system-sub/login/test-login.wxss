@@ -1,0 +1,147 @@
+.test-container {
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.form {
+  background-color: #fff;
+  padding: 30rpx;
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.form-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.label {
+  width: 120rpx;
+  color: #666;
+}
+
+.input {
+  flex: 1;
+  height: 80rpx;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  background-color: #f9f9f9;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20rpx;
+}
+
+.btn {
+  height: 80rpx;
+  line-height: 80rpx;
+  margin: 10rpx;
+  border-radius: 8rpx;
+  text-align: center;
+  font-size: 28rpx;
+  min-width: 180rpx;
+}
+
+.primary {
+  background-color: #667eea;
+  color: white;
+}
+
+.secondary {
+  background-color: #4cd964;
+  color: white;
+}
+
+.plain {
+  background-color: #f9f9f9;
+  color: #333;
+  border: 1rpx solid #ddd;
+}
+
+.result-container {
+  background-color: #fff;
+  padding: 20rpx;
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.result-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.copy-btn {
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  background-color: #f0f0f0;
+  border-radius: 6rpx;
+  color: #666;
+}
+
+.result-content {
+  padding: 20rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+  border-left: 6rpx solid #4cd964;
+}
+
+.result-content.error {
+  border-left-color: #ff3b30;
+}
+
+.result-text {
+  font-family: monospace;
+  font-size: 24rpx;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.help {
+  background-color: #fff;
+  padding: 20rpx;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.help-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+  color: #333;
+}
+
+.help-content {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+}

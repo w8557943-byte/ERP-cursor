@@ -1,0 +1,6 @@
+.container{padding:16px}
+.header{font-size:18px;font-weight:600;margin-bottom:12px}
+.card{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid #eee;border-radius:8px}
+.action{margin-top:16px}
+.secondary{margin-top:8px}
+.loading{color:#888;padding:12px}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP管理系统 - 临时界面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 ERP管理系统</h1>
+        <div class="status">
+            <h3>系统状态</h3>
+            <p>✅ 后端服务: 运行中 (端口3005)</p>
+            <p>⚠️ 前端界面: 临时页面</p>
+            <p>📱 应用程序: 正常运行</p>
+        </div>
+        <p>由于前端依赖问题，系统正在使用临时界面。</p>
+        <p>您可以通过以下方式访问系统功能：</p>
+        <div style="margin: 20px 0;">
+            <button class="btn" onclick="window.open('http://localhost:3005', '_blank')">访问后端API</button>
+            <button class="btn" onclick="window.open('http://localhost:3005/health', '_blank')">健康检查</button>
+        </div>
+        <p><small>如需完整功能，请联系开发人员解决前端依赖问题。</small></p>
+    </div>
+</body>
+</html>

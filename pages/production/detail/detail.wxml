@@ -1,0 +1,202 @@
+<view class="page">
+  <view class="header-card">
+    <view class="header-top">
+      <view class="order-no-wrap">
+        <text class="order-no">{{orderInfo.orderNo || '-'}}</text>
+        <text class="copy-link" bindtap="onCopyOrderNo">复制</text>
+      </view>
+      <text class="status-badge st-{{orderStatusKey}}">{{orderInfo.status || '-'}}</text>
+    </view>
+    <view class="header-sub">
+      <text class="header-customer">{{orderInfo.customerName || '-'}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="state state-loading">
+    <text class="state-text">加载中...</text>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="state state-error">
+    <text class="state-text">{{loadError}}</text>
+    <text class="state-sub">下拉刷新重试</text>
+  </view>
+
+  <view wx:else>
+    <view class="stats-grid">
+      <view class="stat-card stat-total">
+        <view class="stat-top">
+          <text class="stat-icon">📦</text>
+          <text class="stat-label">订单数量</text>
+        </view>
+        <text class="stat-value">{{orderInfo.totalQty || 0}}</text>
+      </view>
+      <view class="stat-card stat-produced">
+        <view class="stat-top">
+          <text class="stat-icon">🎨</text>
+          <text class="stat-label">印刷完成</text>
+        </view>
+        <text class="stat-value">{{orderInfo.producedQty || 0}}</text>
+      </view>
+      <view class="stat-card stat-stocked">
+        <view class="stat-top">
+          <text class="stat-icon">📥</text>
+          <text class="stat-label">已入库</text>
+        </view>
+        <text class="stat-value">{{stockedQty || 0}}</text>
+      </view>
+      <view class="stat-card stat-shipped">
+        <view class="stat-top">
+          <text class="stat-icon">🚚</text>
+          <text class="stat-label">已发货</text>
+        </view>
+        <text class="stat-value">{{shippedQty || 0}}</text>
+      </view>
+      <view class="stat-card stat-wide stat-remaining">
+        <view class="stat-top">
+          <text class="stat-icon">📦</text>
+          <text class="stat-label">可发库存</text>
+        </view>
+        <text class="stat-value">{{remainingQty || 0}}</text>
+      </view>
+      <view class="stat-card stat-wide stat-time">
+        <view class="stat-top">
+          <text class="stat-icon">🕒</text>
+          <text class="stat-label">创建时间</text>
+        </view>
+        <text class="stat-value stat-value-small">{{orderInfo.createTime || '-'}}</text>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">工单信息</text>
+      </view>
+      <view class="kv-list">
+        <view class="kv-row">
+          <text class="kv-k">产品类别</text>
+          <text class="kv-v">{{orderInfo.productName || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">商品名称</text>
+          <text class="kv-v">{{orderInfo.goodsName || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">规格尺寸</text>
+          <text class="kv-v">{{orderInfo.spec || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">纸板尺寸</text>
+          <text class="kv-v">{{orderInfo.paperSizeDisplay}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">材质编码/楞别</text>
+          <text class="kv-v">{{orderInfo.materialFluteDisplay}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">物料号</text>
+          <text class="kv-v">{{orderInfo.materialNo || '-'}}</text>
+        </view>
+        <view class="kv-row kv-row-notes">
+          <text class="kv-k">备注</text>
+          <text class="kv-v kv-v-notes">{{orderInfo.notes || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">生产进度</text>
+        <text class="section-sub">已完成 {{progressPercent || 0}}%</text>
+      </view>
+      <view class="four-progress">
+        <view class="seg"><view class="seg-fill" style="width: {{segments[0]}}%"></view></view>
+        <view class="seg"><view class="seg-fill" style="width: {{segments[1]}}%"></view></view>
+        <view class="seg"><view class="seg-fill" style="width: {{segments[2]}}%"></view></view>
+        <view class="seg"><view class="seg-fill" style="width: {{segments[3]}}%"></view></view>
+      </view>
+      <view class="steps">
+        <block wx:for="{{processList}}" wx:key="name">
+          <view class="step-item">
+            <view class="step-left">
+              <text class="step-name">{{item.name}}</text>
+              <text class="step-meta" wx:if="{{item.showTime && item.time}}">{{item.time}}</text>
+              <text class="step-meta" wx:if="{{item.showQty && item.qty}}">{{item.qtyLabel}}：{{item.qty}}</text>
+            </view>
+            <text class="step-status {{ item.status === '待处理' ? 'st-pending' : 'st-done' }}">{{item.status}}</text>
+          </view>
+          <view class="shipments" wx:if="{{item.name === '发货' && item.shipments && item.shipments.length}}">
+            <block wx:for="{{item.shipments}}" wx:key="idx" wx:for-item="ship" wx:for-index="idx">
+              <view class="shipment-row">
+                <text class="shipment-k">出货</text>
+                <text class="shipment-v">{{ship.qty}}</text>
+                <text class="shipment-time">{{ship.time}}</text>
+              </view>
+            </block>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">图纸与附件</text>
+      </view>
+      <view class="drawing-preview">
+        <image wx:if="{{drawingUrl}}" class="drawing-image" src="{{drawingUrl}}" mode="widthFix" bindtap="previewImage"></image>
+        <view wx:elif="{{drawingDocUrl}}" class="drawing-doc" bindtap="previewDocument">打开图纸（PDF）</view>
+        <view wx:else class="drawing-empty">暂无图纸</view>
+      </view>
+      <view class="attachment-list" wx:if="{{attachments && attachments.length}}">
+        <block wx:for="{{attachments}}" wx:key="url">
+          <view class="attachment-item" bindtap="onOpenAttachment" data-index="{{index}}">
+            <text class="attachment-name">{{item.name}}</text>
+            <text class="attachment-tag">{{item.kindText || item.kind}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="section-card" wx:if="{{qcInfo.history.length}}">
+      <view class="section-header">
+        <text class="section-title">质检历史</text>
+      </view>
+      <view class="qc-list">
+        <block wx:for="{{qcInfo.history}}" wx:key="index">
+          <view class="qc-item">
+            <text class="qc-k">印刷完成时间</text>
+            <text class="qc-v">{{item.time}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-safe-space"></view>
+</view>
+
+<view class="footer-area">
+  <button wx:if="{{showStartBtn}}" class="btn btn-primary" size="mini" bindtap="onStartProduction">开始生产</button>
+  <button wx:if="{{showShipBtn}}" class="btn btn-primary" size="mini" bindtap="openShipmentDialog">发货</button>
+  <button wx:if="{{showPrintBtn}}" class="btn btn-primary" size="mini" bindtap="onPrintWorkorder">打印施工单</button>
+  <button class="btn btn-ghost" size="mini" bindtap="onBack">返回列表</button>
+</view>
+
+<view wx:if="{{showShipmentDialog}}" class="dialog-mask">
+  <view class="dialog-panel">
+    <view class="dialog-title">发货确认</view>
+    <view class="dialog-body">
+      <view class="dialog-row"><text class="dialog-label">客户</text><text class="dialog-value">{{shipmentDialog.customer}}</text></view>
+      <view class="dialog-row"><text class="dialog-label">规格</text><text class="dialog-value">{{shipmentDialog.spec}}</text></view>
+      <view class="dialog-row"><text class="dialog-label">商品名称</text><text class="dialog-value">{{shipmentDialog.productName || '无'}}</text></view>
+      <view class="dialog-row"><text class="dialog-label">物料号</text><text class="dialog-value">{{shipmentDialog.materialNo || '无'}} </text></view>
+      <view class="dialog-row"><text class="dialog-label">库存数量</text><text class="dialog-value">{{shipmentDialog.inventoryQty || 0}}</text></view>
+      <view class="dialog-input-row">
+        <input class="dialog-input" type="number" placeholder="最多可发货：{{shipmentDialog.remainingQty || 0}}" bindinput="onShipQtyInput" value="{{shipmentDialog.inputQty}}"/>
+      </view>
+    </view>
+    <view class="dialog-actions">
+      <button class="btn-secondary" bindtap="cancelShipment">取消</button>
+      <button class="btn-primary" bindtap="confirmShipment">确认</button>
+    </view>
+  </view>
+</view>

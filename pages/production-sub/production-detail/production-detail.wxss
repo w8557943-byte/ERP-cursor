@@ -1,0 +1,788 @@
+/* 生产工单详情页样式 - 现代化配色 */
+
+page {
+  background: #f8fafc;
+  padding-bottom: 120rpx;
+}
+
+/* 订单信息区域 - 紧凑设计 */
+.order-header-compact {
+  margin: 20rpx 20rpx 30rpx;
+  padding: 25rpx 20rpx;
+  background: #fff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(148, 163, 184, 0.1);
+}
+
+.order-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.order-label {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.order-no-compact {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #334155;
+  flex: 1;
+}
+
+.copy-btn-compact {
+  width: auto;
+  min-width: 60rpx;
+  height: 40rpx;
+  background: #f1f5f9;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 6rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12rpx;
+  margin: 0;
+  font-size: 22rpx;
+  color: #6366f1;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.order-status-compact {
+  display: flex;
+  align-items: center;
+}
+
+.status-label {
+  font-size: 30rpx;
+  color: #64748b;
+  margin-right: 12rpx;
+}
+
+/* 统一模块样式 - 现代化配色 */
+.detail-section.modern,
+.process-section.modern,
+.operation-section,
+.operation-section {
+  margin: 20rpx 20rpx 30rpx;
+  background: #fff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  padding: 25rpx 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(148, 163, 184, 0.1);
+}
+
+.detail-section.modern .section-header,
+.process-section.modern .section-header {
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.detail-cards {
+  gap: 0;
+}
+
+.detail-card {
+  margin-bottom: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  margin: 0 20rpx;
+  padding: 20rpx 0;
+}
+
+.detail-card:last-child {
+  border-bottom: none;
+}
+
+.operation-timeline {
+  gap: 15rpx;
+  padding: 0;
+}
+
+.timeline-item {
+  margin-bottom: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  padding: 20rpx 0;
+}
+
+.timeline-item:last-child {
+  border-bottom: none;
+}
+
+/* 移除旧的样式 */
+.top-nav, .order-info-card, .order-info-header, .order-no-section, .order-no-label, .order-no-wrapper, .order-no-value, .copy-btn-mini, .copy-text {
+  display: none;
+}
+
+.status-badge {
+  font-size: 30rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 12rpx;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 120rpx;
+  text-align: center;
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
+  border: 2rpx solid #d97706;
+}
+
+.status-badge.completed {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(59, 130, 246, 0.3);
+  border: 2rpx solid #2563eb;
+}
+
+.status-badge.producing {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.3);
+  border: 2rpx solid #059669;
+}
+
+.status-badge.inspected {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(139, 92, 246, 0.3);
+  border: 2rpx solid #7c3aed;
+}
+
+/* 移除旧的样式 */
+.header-info, .info-card, .info-header, .info-title {
+  display: none;
+}
+
+/* 现代化卡片设计 */
+.detail-section.modern {
+  margin: 0 20rpx 30rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1e293b;
+  position: relative;
+  padding-left: 20rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4rpx;
+  height: 24rpx;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 2rpx;
+}
+
+.section-subtitle {
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+.detail-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.detail-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 0 20rpx 0;
+}
+
+.detail-card.full-width {
+  margin: 0;
+  width: 100%;
+  padding: 0;
+}
+
+.card-header {
+  padding: 25rpx 0 15rpx 0;
+  border-bottom: none;
+}
+
+.card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #334155;
+}
+
+.card-content {
+  padding: 15rpx 0 20rpx 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: none;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 32rpx;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 32rpx;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.detail-value.notes {
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #475569;
+  font-weight: 400;
+}
+
+.print-drawing {
+  width: 100%;
+  height: 300rpx;
+  border-radius: 12rpx;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+/* 工序进度区 - 现代化外边框 */
+.process-section.modern {
+  margin: 20rpx 20rpx 30rpx;
+  background: #fff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  padding: 25rpx;
+  box-shadow: 0 4rpx 12rpx rgba(148, 163, 184, 0.08);
+}
+
+.process-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 0;
+}
+
+.timeline-item {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  border-bottom: 1rpx solid #f1f5f9;
+}
+
+.process-card {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.process-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.process-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.process-meta {
+  margin: 20rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.meta-item {
+  font-size: 34rpx;
+  color: #475569;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.process-actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 24rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  padding: 0 25rpx;
+  border: none;
+  border-radius: 14rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  transition: all 0.2s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+}
+
+.action-btn.finish {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+}
+
+.action-btn.qc {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+}
+
+.action-btn.secondary-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+}
+
+.action-btn.print-complete-btn {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: #fff;
+}
+
+/* 质检弹窗 - 现代化 */
+.qc-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4rpx);
+}
+
+.qc-content {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 50rpx 40rpx;
+  width: 85%;
+  max-width: 600rpx;
+  text-align: center;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+}
+
+.qc-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12rpx;
+}
+
+.qc-subtitle {
+  font-size: 28rpx;
+  color: #64748b;
+  margin-bottom: 20rpx;
+}
+
+.qc-info {
+  margin-bottom: 40rpx;
+  text-align: left;
+}
+
+.qc-info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  font-size: 30rpx;
+}
+
+.qc-label {
+  color: #475569;
+  font-weight: 600;
+  min-width: 120rpx;
+  margin-right: 20rpx;
+}
+
+.qc-value {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.qc-input {
+  flex: 1;
+  height: 80rpx;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  font-size: 30rpx;
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.qc-input:focus {
+  border-color: #6366f1;
+  background: #fff;
+}
+
+.qc-buttons {
+  display: flex;
+  gap: 20rpx;
+  justify-content: center;
+}
+
+.qc-buttons .action-btn {
+  flex: none;
+  min-width: 120rpx;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 375px) {
+  .order-info-card {
+    margin: -20rpx 20rpx 30rpx;
+  }
+  
+  .detail-section.modern,
+  .process-section.modern {
+    margin: 0 20rpx 30rpx;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail-card,
+.timeline-item {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* 移除旧的样式 */
+.header-info, .info-card, .info-header, .info-title {
+  display: none;
+}
+
+.operation-section {
+  margin-bottom: 40rpx;
+  padding: 0 20rpx;
+}
+
+.operation-timeline {
+  position: relative;
+  padding-left: 50rpx;
+}
+
+.operation-timeline::before {
+  content: '';
+  position: absolute;
+  left: 20rpx;
+  top: 0;
+  bottom: 0;
+  width: 2rpx;
+  background: #e2e8f0;
+}
+
+.operation-item {
+  position: relative;
+  margin-bottom: 30rpx;
+}
+
+.operation-dot {
+  position: absolute;
+  left: -35rpx;
+  top: 12rpx;
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  border: 4rpx solid #fff;
+  z-index: 2;
+}
+
+.operation-dot.start {
+  background: #6366f1;
+  border-color: #4f46e5;
+}
+
+.operation-dot.complete {
+  background: #10b981;
+  border-color: #059669;
+}
+
+.operation-dot.inspect {
+  background: #f59e0b;
+  border-color: #d97706;
+}
+
+.operation-content {
+  margin-left: 20rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(148, 163, 184, 0.08);
+  border: 1rpx solid #e2e8f0;
+}
+
+.operation-text {
+  font-size: 34rpx;
+  color: #1e293b;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.operation-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  font-size: 30rpx;
+  color: #64748b;
+}
+
+.detail-section {
+  margin-bottom: 40rpx;
+  padding: 0 20rpx;
+}
+
+.detail-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 35rpx;
+  box-shadow: 0 4rpx 16rpx rgba(148, 163, 184, 0.08);
+  border: 1rpx solid #e2e8f0;
+  margin-bottom: 30rpx;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.detail-label {
+  font-size: 34rpx;
+  color: #555;
+  font-weight: 600;
+  min-width: 180rpx;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  font-size: 34rpx;
+  color: #1a1a1a;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.print-drawing {
+  width: 100%;
+  height: 400rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 28rpx;
+  border: 2rpx dashed #ddd;
+}
+
+.print-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+  object-fit: cover;
+}
+
+.footer-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 30rpx;
+  border-top: 1rpx solid #e2e8f0;
+  box-shadow: 0 -4rpx 20rpx rgba(148, 163, 184, 0.08);
+  z-index: 100;
+  backdrop-filter: blur(10rpx);
+}
+
+.footer-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.footer-btn {
+  flex: 1;
+  width: auto;
+  height: 88rpx;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  border-radius: 44rpx;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 4rpx 16rpx rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
+}
+
+.footer-btn.secondary {
+  background: #f1f5f9;
+  color: #334155;
+  box-shadow: none;
+  border: 1rpx solid #e2e8f0;
+}
+
+.footer-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(99, 102, 241, 0.2);
+}
+
+/* 附件展示区域样式 */
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 20rpx 0;
+}
+
+.empty-state {
+  padding: 40rpx 20rpx;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+  line-height: 1.5;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  border: 1rpx solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.attachment-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.attachment-info {
+  flex: 1;
+}
+
+.attachment-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.attachment-name::before {
+  content: "📎 ";
+  margin-right: 8rpx;
+}
+
+.attachment-type {
+  font-size: 24rpx;
+  color: #666;
+  background: #e9ecef;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  display: inline-block;
+}
+
+.attachment-actions {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.download-btn {
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 16rpx;
+  border: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 80rpx;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  box-shadow: 0 2rpx 8rpx rgba(0,123,255,0.3);
+}
+
+.download-btn:active {
+  transform: scale(0.95);
+}
+
+.card-subtitle {
+  font-size: 24rpx;
+  color: #64748b;
+  margin-left: auto;
+  font-weight: normal;
+}

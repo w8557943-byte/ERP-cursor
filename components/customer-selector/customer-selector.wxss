@@ -1,0 +1,201 @@
+.customer-selector {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.selector-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.selector-content {
+  background-color: #fff;
+  border-radius: 16rpx;
+  width: 90%;
+  max-width: 700rpx;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.2);
+}
+
+.selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.selector-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.close-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  font-size: 32rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 搜索框 */
+.search-box {
+  position: relative;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #e9ecef;
+}
+
+.search-input {
+  width: 100%;
+  height: 80rpx;
+  background-color: #f8f9fa;
+  border: 1rpx solid #e9ecef;
+  border-radius: 40rpx;
+  padding: 0 80rpx 0 30rpx;
+  font-size: 28rpx;
+  color: #2c3e50;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  background-color: #fff;
+}
+
+.search-icon {
+  position: absolute;
+  right: 50rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 32rpx;
+  color: #6c757d;
+}
+
+/* 客户列表 */
+.customer-list {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 80rpx 0;
+  color: #6c757d;
+  font-size: 28rpx;
+}
+
+.empty-text {
+  display: block;
+  margin-bottom: 20rpx;
+  font-size: 32rpx;
+  color: #495057;
+}
+
+.empty-tip {
+  font-size: 26rpx;
+  color: #6c757d;
+}
+
+.customer-item {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.customer-item:hover {
+  background-color: #f8f9fa;
+}
+
+.customer-item:last-child {
+  border-bottom: none;
+}
+
+.customer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.customer-main {
+  flex: 1;
+}
+
+.customer-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.customer-meta {
+  display: flex;
+  gap: 20rpx;
+}
+
+.customer-contact {
+  font-size: 26rpx;
+  color: #495057;
+}
+
+.customer-phone {
+  font-size: 26rpx;
+  color: #667eea;
+}
+
+.customer-extra {
+  text-align: right;
+  max-width: 200rpx;
+}
+
+.customer-address {
+  font-size: 24rpx;
+  color: #6c757d;
+  margin-bottom: 8rpx;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-tags {
+  display: flex;
+  gap: 8rpx;
+  justify-content: flex-end;
+}
+
+.customer-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: bold;
+}
+
+.customer-tag:nth-child(1) {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.customer-tag:nth-child(2) {
+  background-color: #f39c12;
+  color: white;
+}

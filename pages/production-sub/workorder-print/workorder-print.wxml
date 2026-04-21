@@ -1,0 +1,82 @@
+<view class="workorder-page">
+  <view class="header">
+    <text class="title">施工单预览</text>
+  </view>
+  <scroll-view class="content" scroll-y>
+    <view class="preview-root">
+      <view class="pages">
+        <block wx:for="{{orders}}" wx:key="orderNo">
+          <view class="ticket">
+            <view class="ticket-header">
+              <text class="ticket-title">施工单</text>
+            </view>
+            <view class="ticket-body">
+              <view class="ticket-row">
+                <text class="ticket-label">订单号</text>
+                <text class="ticket-value">{{item.orderNo || '-'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">客户名称</text>
+                <text class="ticket-value">{{item.customerName || '-'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">产品类别</text>
+                <text class="ticket-value">{{item.productName || '-'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">规格</text>
+                <text class="ticket-value">{{item.specText || item.spec || '-'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">纸板尺寸</text>
+                <text class="ticket-value">{{item.sizeText || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">压线尺寸</text>
+                <text class="ticket-value">{{item.creaseText || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">数量</text>
+                <text class="ticket-value">{{item.quantityText || item.quantity || 0}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">下单数量</text>
+                <text class="ticket-value">{{item.sheetCountText || ((item.sheetCount || item.quantity || 0) + ' 片')}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">材质编码/楞别</text>
+                <text class="ticket-value">{{item.materialText || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">物料号</text>
+                <text class="ticket-value">{{item.materialNo || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">商品名称</text>
+                <text class="ticket-value">{{item.goodsName || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">拼接方式</text>
+                <text class="ticket-value">{{item.joinMethod || '无'}}</text>
+              </view>
+              <view class="ticket-row">
+                <text class="ticket-label">备注</text>
+                <text class="ticket-value">{{item.notes || ''}}</text>
+              </view>
+            </view>
+            <view class="ticket-qr" wx:if="{{item.qrUrl}}">
+              <text class="ticket-qr-label">订单二维码：</text>
+              <image class="ticket-qr-image" src="{{item.qrUrl}}" mode="aspectFit" />
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{!orders.length}}" class="empty">
+          <text class="empty-text">暂无要预览的施工单</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  <view class="bottom-actions">
+    <button class="btn-primary" bindtap="onPrint">打印</button>
+  </view>
+</view>

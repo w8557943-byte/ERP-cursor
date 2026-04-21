@@ -1,0 +1,13 @@
+{
+  "name": "erp-api",
+  "version": "1.0.0",
+  "description": "ERP系统API云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "uuid": "^8.3.2",
+    "axios": "^1.6.7",
+    "iconv-lite": "^0.6.3",
+    "bcryptjs": "^2.4.3"
+  }
+}

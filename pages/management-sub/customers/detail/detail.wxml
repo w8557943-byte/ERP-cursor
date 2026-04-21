@@ -1,0 +1,76 @@
+<view class="detail-page">
+  <view wx:if="{{customer}}" class="customer-detail">
+    <!-- 客户基本信息 -->
+    <view class="basic-info-section">
+      <view class="customer-header">
+        <text class="customer-name">{{customer.name}}</text>
+        <view class="status-badge {{customer.status}}">
+          {{customer.status === 'active' ? '活跃' : '非活跃'}}
+        </view>
+      </view>
+      
+      <view class="contact-info">
+        <view class="info-item">
+          <text class="info-label">联系人：</text>
+          <text class="info-value">{{customer.contact}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">电话：</text>
+          <text class="info-value" bindtap="callCustomer">{{customer.phone}}</text>
+          <text class="call-icon">📞</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">邮箱：</text>
+          <text class="info-value">{{customer.email}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">地址：</text>
+          <text class="info-value">{{customer.address}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 下单频繁率 -->
+    <view class="frequency-section">
+      <text class="section-title">下单频繁率</text>
+      <view class="stars-container">
+        <text wx:for="{{5}}" wx:key="index" class="star {{index < customer.frequency ? 'star-active' : 'star-inactive'}}">
+          {{index < customer.frequency ? '★' : '☆'}}
+        </text>
+      </view>
+      <text class="frequency-text">{{customer.frequency}}星（共5星）</text>
+    </view>
+
+    <!-- 订单统计 -->
+    <view class="stats-section">
+      <text class="section-title">订单统计</text>
+      <view class="stats-grid">
+        <view class="stat-item">
+          <text class="stat-number">{{customer.orderCount}}</text>
+          <text class="stat-label">总订单数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">¥{{customer.totalAmountText}}</text>
+          <text class="stat-label">总金额</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{customer.lastOrderDate || '无'}}</text>
+          <text class="stat-label">最后下单</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-section">
+      <button class="action-btn primary" bindtap="createOrder">创建订单</button>
+      <button class="action-btn" bindtap="viewOrderHistory">历史订单</button>
+      <button class="action-btn" bindtap="editCustomer">编辑信息</button>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!customer}}" class="empty-state">
+    <text class="empty-icon">👤</text>
+    <text class="empty-text">客户信息不存在</text>
+  </view>
+</view>

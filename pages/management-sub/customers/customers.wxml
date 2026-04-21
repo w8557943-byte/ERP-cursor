@@ -1,0 +1,129 @@
+<view class="inventory-page">
+  <view class="page-header">
+    <view class="header-card">
+      <image class="header-logo" src="/images/logo.png" mode="heightFix"></image>
+      <view class="header-info">
+        <text class="main-title">客户管理</text>
+        <text class="sub-title">管理客户与供应商信息</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="statistics-grid">
+    <view class="stat-card">
+      <view class="stat-icon completed-icon">👥</view>
+      <view class="stat-content">
+        <text class="stat-number">{{customerTotal}}</text>
+        <text class="stat-label">客户总数</text>
+      </view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-icon producing-icon">🏭</view>
+      <view class="stat-content">
+        <text class="stat-number">{{supplierTotal}}</text>
+        <text class="stat-label">供应商总数</text>
+      </view>
+    </view>
+    <view class="stat-card" wx:if="{{activeTab === 'customers'}}">
+      <view class="stat-icon waiting-icon">🔎</view>
+      <view class="stat-content">
+        <text class="stat-number">{{customerShown}}</text>
+        <text class="stat-label">当前显示</text>
+      </view>
+    </view>
+    <view class="stat-card" wx:elif="{{activeTab === 'suppliers'}}">
+      <view class="stat-icon waiting-icon">🔎</view>
+      <view class="stat-content">
+        <text class="stat-number">{{supplierShown}}</text>
+        <text class="stat-label">当前显示</text>
+      </view>
+    </view>
+    <view class="stat-card" wx:if="{{activeTab === 'customers'}}" bindtap="showAddCustomerPage">
+      <view class="stat-icon urgent-icon">➕</view>
+      <view class="stat-content">
+        <text class="stat-number">新增</text>
+        <text class="stat-label">添加客户</text>
+      </view>
+    </view>
+    <view class="stat-card" wx:elif="{{activeTab === 'suppliers'}}" bindtap="showAddSupplierPage">
+      <view class="stat-icon urgent-icon">➕</view>
+      <view class="stat-content">
+        <text class="stat-number">新增</text>
+        <text class="stat-label">添加供应商</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="filter-container">
+    <view class="tab-row">
+      <view class="tab-pill {{activeTab === 'customers' ? 'active' : ''}}" data-type="customers" bindtap="switchTab">客户</view>
+      <view class="tab-pill {{activeTab === 'suppliers' ? 'active' : ''}}" data-type="suppliers" bindtap="switchTab">供应商</view>
+    </view>
+    <view class="nav-bar">
+      <input wx:if="{{activeTab === 'customers'}}" class="search-input" placeholder="搜索客户名称/联系人/电话" value="{{searchKeyword}}" bindinput="onSearchInput" />
+      <input wx:elif="{{activeTab === 'suppliers'}}" class="search-input" placeholder="搜索供应商名称/联系人/电话" value="{{supplierSearchKeyword}}" bindinput="onSupplierSearchInput" />
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 'customers'}}" class="inventory-list">
+    <view wx:if="{{loading}}" class="list-loading">加载中...</view>
+    <view wx:elif="{{!loading && ((filteredCustomers && filteredCustomers.length === 0) || (!filteredCustomers && (!customers || customers.length === 0)))}}" class="empty-state">
+      <text class="empty-text">暂无客户数据</text>
+    </view>
+    <view wx:else class="order-cards">
+      <view wx:for="{{filteredCustomers || customers}}" wx:key="id" class="order-card">
+        <view class="order-header">
+          <view class="order-info">
+            <text class="order-number">{{item.name}}</text>
+          </view>
+          <view class="right-column">
+            <view class="order-status {{item.status === 'active' ? 'status-stocked' : 'status-urgent'}}">
+              {{item.status === 'active' ? '活跃' : '非活跃'}}
+            </view>
+          </view>
+        </view>
+        <view class="order-details">
+          <view class="detail-line" wx:if="{{item.shortName}}"><text class="detail-label">简称：</text><text class="detail-value">{{item.shortName}}</text></view>
+          <view class="detail-line" wx:if="{{item.paymentTerms}}"><text class="detail-label">结款：</text><text class="detail-value">{{item.paymentTerms}}</text></view>
+          <view class="detail-line"><text class="detail-label">联系人：</text><text class="detail-value">{{item.contact || '-'}}</text></view>
+          <view class="detail-line"><text class="detail-label">电话：</text><text class="detail-value">{{item.phone || '-'}}</text></view>
+          <view class="detail-line" wx:if="{{item.address}}"><text class="detail-label">地址：</text><text class="detail-value">{{item.address}}</text></view>
+          <view class="detail-line action-row">
+            <button class="action-btn primary" size="mini" bindtap="editCustomer" data-id="{{item.id}}">编辑</button>
+            <button class="action-btn danger" size="mini" bindtap="deleteCustomer" data-id="{{item.id}}">删除</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:elif="{{activeTab === 'suppliers'}}" class="inventory-list">
+    <view wx:if="{{supplierLoading}}" class="list-loading">加载中...</view>
+    <view wx:elif="{{!supplierLoading && ((filteredSuppliers && filteredSuppliers.length === 0) || (!filteredSuppliers && (!suppliers || suppliers.length === 0)))}}" class="empty-state">
+      <text class="empty-text">暂无供应商数据</text>
+    </view>
+    <view wx:else class="order-cards">
+      <view wx:for="{{filteredSuppliers || suppliers}}" wx:key="id" class="order-card">
+        <view class="order-header">
+          <view class="order-info">
+            <text class="order-number">{{item.name}}</text>
+          </view>
+          <view class="right-column">
+            <view class="order-status status-stocked">
+              {{item.industry || '供应商'}}
+            </view>
+          </view>
+        </view>
+        <view class="order-details">
+          <view class="detail-line" wx:if="{{item.shortName}}"><text class="detail-label">简称：</text><text class="detail-value">{{item.shortName}}</text></view>
+          <view class="detail-line"><text class="detail-label">联系人：</text><text class="detail-value">{{item.contact || '未填写'}}</text></view>
+          <view class="detail-line"><text class="detail-label">电话：</text><text class="detail-value">{{item.phone || '未填写'}}</text></view>
+          <view class="detail-line action-row">
+            <button class="action-btn primary" size="mini" bindtap="editSupplier" data-id="{{item.id}}">编辑</button>
+            <button class="action-btn danger" size="mini" bindtap="deleteSupplier" data-id="{{item.id}}">删除</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

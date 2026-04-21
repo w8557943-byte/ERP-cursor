@@ -1,0 +1,30 @@
+<view class="debug-container">
+  <view class="header">
+    <text class="title">登录功能调试</text>
+  </view>
+  
+  <view class="buttons">
+    <button class="btn primary" bindtap="testCloud">测试云环境</button>
+    <button class="btn secondary" bindtap="testDatabase">测试数据库</button>
+    <button class="btn primary" bindtap="testLoginFunction">测试登录函数</button>
+    <button class="btn plain" bindtap="clearLogs">清除日志</button>
+    <button class="btn plain" bindtap="copyLogs">复制日志</button>
+  </view>
+  
+  <view class="log-container">
+    <view class="log-header">
+      <text class="log-title">调试日志</text>
+      <text class="log-count">({{logs.length}})</text>
+    </view>
+    
+    <scroll-view class="log-content" scroll-y="true">
+      <view class="log-item" wx:for="{{logs}}" wx:key="index">
+        <text class="log-text">{{item}}</text>
+      </view>
+      
+      <view class="empty-tip" wx:if="{{logs.length === 0}}">
+        <text>暂无日志，请点击上方按钮开始测试</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>

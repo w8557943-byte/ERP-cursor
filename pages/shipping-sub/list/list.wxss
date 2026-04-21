@@ -1,0 +1,7 @@
+.container{padding:16px}
+.header{font-size:18px;font-weight:600;margin-bottom:12px}
+.item{padding:12px;border-bottom:1px solid #eee}
+.row{display:flex;align-items:center;gap:12px}
+.col{display:flex;flex-direction:column;gap:4px}
+.action{margin-top:16px}
+.loading,.empty{color:#888;padding:12px}

@@ -1,0 +1,98 @@
+<view class="inventory-page">
+  <view class="page-header">
+    <view class="header-card">
+      <view class="header-icon"><text class="icon-text">📦</text></view>
+      <view class="header-info">
+        <text class="main-title">库存管理</text>
+        <text class="sub-title">实时查看入库剩余</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="statistics-grid">
+    <view class="stat-card">
+      <view class="stat-icon completed-icon">📦</view>
+      <view class="stat-content">
+        <text class="stat-number">{{invCount}}</text>
+        <text class="stat-label">库存订单</text>
+      </view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-icon waiting-icon">⏳</view>
+      <view class="stat-content">
+        <text class="stat-number">{{staleCount}}</text>
+        <text class="stat-label">呆滞订单</text>
+      </view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-icon producing-icon">💰</view>
+      <view class="stat-content">
+        <text class="stat-number">¥{{inventoryTotalAmount}}</text>
+        <text class="stat-label">库存总金额</text>
+      </view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-icon urgent-icon">❤️</view>
+      <view class="stat-content">
+        <text class="stat-number">{{inventoryHealthScore}}</text>
+        <text class="stat-label">库存健康度</text>
+      </view>
+    </view>
+  </view>
+
+  
+
+  <view class="filter-container">
+    <view class="view-tabs">
+      <view class="view-tab {{viewType === 'production' ? 'active' : ''}}" bindtap="switchView" data-type="production">生产库存</view>
+      <view class="view-tab {{viewType === 'purchased' ? 'active' : ''}}" bindtap="switchView" data-type="purchased">外购库存</view>
+    </view>
+    <view class="nav-bar">
+      <text class="nav-title">筛选</text>
+    <view class="nav-actions">
+      <picker mode="selector" range="{{sortModeOptions}}" bindchange="onSortModeChange">
+        <view class="nav-btn">排序：{{sortModeText}}</view>
+      </picker>
+      <view class="nav-btn" bindtap="toggleSortDir">方向：{{sortDir === 'desc' ? '↓' : '↑'}}</view>
+      <picker mode="selector" range="{{customerList}}" bindchange="onCustomerPickerChange">
+        <view class="nav-btn primary">{{selectedCustomerName ? selectedCustomerName : '选择客户'}}</view>
+      </picker>
+      <view wx:if="{{selectedCustomerName}}" class="nav-btn" bindtap="clearCustomerFilter">清空</view>
+    </view>
+  </view>
+</view>
+
+  <scroll-view class="inventory-list" scroll-y refresher-enabled="{{true}}" refresher-triggered="{{isRefreshing}}" bindrefresherrefresh="onRefresh">
+    <view wx:if="{{displayList.length === 0}}" class="empty-state">
+      <text class="empty-text">暂无库存数据</text>
+    </view>
+      <view wx:else class="order-cards">
+      <view wx:for="{{displayList}}" wx:key="orderNo" class="order-card" bindtap="goToOrderDetail" data-order-no="{{item.orderNo}}" data-order-id="{{item.id}}">
+        <view class="order-header">
+          <view class="order-info">
+            <view class="order-number-row">
+              <text class="order-number">{{item.orderNo}}</text>
+            </view>
+            <view class="customer-row">
+              <text class="customer-label">客户：</text>
+              <text class="customer-name">{{item.customerName}}</text>
+            </view>
+            
+          </view>
+          <view class="right-column">
+            <view class="order-status status-stocked">已入库</view>
+          </view>
+        </view>
+        <view class="order-details">
+          <view class="detail-line"><text class="detail-label">商品名称：</text><text class="detail-value">{{item.goodsName || '无'}}</text></view>
+          <view class="detail-line"><text class="detail-label">规格型号：</text><text class="detail-value">{{item.spec || '无'}}</text></view>
+          <view class="detail-line" wx:if="{{viewType !== 'purchased'}}"><text class="detail-label">物料号：</text><text class="detail-value">{{item.materialNo || '无'}}</text></view>
+          <view class="detail-line"><text class="detail-label">库存数量：</text><text class="detail-value">{{item.inventoryQty}}{{item.unit}}</text></view>
+          <view class="detail-line" wx:if="{{viewType === 'purchased'}}"><text class="detail-label">订单金额：</text><text class="detail-value">¥{{item.orderAmountFormatted}}</text></view>
+          <view class="detail-line" wx:else><text class="detail-label">下单时间：</text><text class="detail-value">{{item.createdAtText}}</text></view>
+          <view class="detail-line"><text class="detail-label">入库时间：</text><text class="detail-value">{{item.stockedAtText}}</text></view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

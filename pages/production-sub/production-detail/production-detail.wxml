@@ -1,0 +1,245 @@
+<!-- 简化版生产工单详情页 -->
+<view class="page">
+  <!-- 订单信息区域 -->
+  <view class="order-header-compact">
+    <view class="order-info-compact">
+      <text class="order-label">订单号：</text>
+      <text class="order-no-compact">{{orderInfo.orderNo}}</text>
+      <button class="copy-btn-compact" bindtap="onCopyOrderNo">复制</button>
+    </view>
+    <view class="order-status-compact">
+      <text class="status-label">订单状态：</text>
+      <text class="status-badge {{orderInfo.status}}">{{orderInfo.statusText}}</text>
+    </view>
+  </view>
+
+  <!-- 工单详细信息区 - 优化版 -->
+  <view class="detail-section modern">
+    <view class="section-header">
+      <text class="section-title">工单详情</text>
+      <text class="section-subtitle">生产参数</text>
+    </view>
+
+    <view class="detail-cards">
+      <view class="detail-card">
+        <view class="card-header">
+          <text class="card-title">📦 产品信息</text>
+        </view>
+        <view class="card-content">
+          <view class="detail-row">
+            <text class="detail-label">客户名称</text>
+            <text class="detail-value">{{orderInfo.customer}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">产品类别</text>
+            <text class="detail-value">{{orderInfo.productName}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">产品规格</text>
+            <text class="detail-value">{{orderInfo.spec}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">纸箱箱型</text>
+            <text class="detail-value">{{orderInfo.boxType}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">生产数量</text>
+            <text class="detail-value">{{orderInfo.totalQty}} 个</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="detail-card">
+        <view class="card-header">
+          <text class="card-title">📐 尺寸工艺</text>
+        </view>
+        <view class="card-content">
+          <view class="detail-row">
+            <text class="detail-label">纸箱调刀尺寸</text>
+            <text class="detail-value">{{orderInfo.cuttingSize}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">纸板尺寸</text>
+            <text class="detail-value">{{orderInfo.paperSize}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">压线尺寸</text>
+            <text class="detail-value">{{orderInfo.creaseSize}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="detail-card">
+        <view class="card-header">
+          <text class="card-title">🧾 材料信息</text>
+        </view>
+        <view class="card-content">
+          <view class="detail-row">
+            <text class="detail-label">纸板供应商</text>
+            <text class="detail-value">{{orderInfo.paperSupplier}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">纸板材质代码</text>
+            <text class="detail-value">{{orderInfo.materialCode}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">楞别</text>
+            <text class="detail-value">{{orderInfo.fluteType}}</text>
+          </view>
+          <view class="detail-row">
+            <text class="detail-label">纸箱粘合方式</text>
+            <text class="detail-value">{{orderInfo.bondingMethod}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="detail-card full-width" wx:if="{{orderInfo.orderNote}}">
+        <view class="card-header">
+          <text class="card-title">📝 订单备注</text>
+        </view>
+        <view class="card-content">
+          <text class="detail-value notes">{{orderInfo.orderNote}}</text>
+        </view>
+      </view>
+
+      <view class="detail-card full-width" wx:if="{{orderInfo.printDrawing}}">
+        <view class="card-header">
+          <text class="card-title">🖼️ 印刷图纸</text>
+        </view>
+        <view class="card-content">
+          <image class="print-drawing" src="{{orderInfo.printDrawing}}" mode="aspectFit" bindtap="previewImage"></image>
+        </view>
+      </view>
+
+      <!-- 附件信息 -->
+      <view class="detail-card full-width">
+        <view class="card-header">
+          <text class="card-title">📎 附件图纸</text>
+          <text class="card-subtitle">共 {{orderInfo.attachments.length || 0}} 个文件</text>
+        </view>
+        <view class="card-content">
+          <view class="attachment-list" wx:if="{{orderInfo.attachments && orderInfo.attachments.length > 0}}">
+            <view class="attachment-item" wx:for="{{orderInfo.attachments}}" wx:key="id" wx:for-item="attachment" wx:for-index="index">
+              <view class="attachment-info">
+                <text class="attachment-name">{{attachment.name}}</text>
+                <text class="attachment-type">{{attachment.type === 'drawing' ? '图纸文件' : '普通文件'}}</text>
+              </view>
+              <view class="attachment-actions">
+                <button class="download-btn" size="mini" bindtap="onDownloadAttachment" data-fileid="{{attachment.fileID}}" data-url="{{attachment.url}}" data-name="{{attachment.name}}">查看</button>
+              </view>
+            </view>
+          </view>
+          <view class="empty-state" wx:else>
+            <text class="empty-text">暂无附件图纸</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 四、核心操作区 -->
+  <view class="main-action">
+    <button wx:if="{{orderInfo.status === 'processing'}}" 
+            class="action-btn finish-btn" 
+            bindtap="onFinishAll">
+      完成
+    </button>
+  </view>
+
+  <!-- 工序进度区 -->
+  <view class="process-section modern">
+    <view class="section-header">
+      <text class="section-title">工序进度</text>
+    </view>
+    
+    <view class="process-timeline">
+      <block wx:for="{{processList}}" wx:key="name">
+        <view class="timeline-item {{item.status}}">
+          <view class="timeline-content">
+            <view class="process-card">
+              <view class="process-header">
+                <text class="process-name">{{item.name}}</text>
+                <text class="status-badge {{item.status}}">{{item.statusText}}</text>
+              </view>
+              
+              <view class="process-meta">
+                <text class="meta-item" wx:if="{{item.operator}}">👤 {{item.operator}}</text>
+                <text class="meta-item" wx:if="{{item.startTime}}">🕒 {{item.startTime}}</text>
+                <text class="meta-item" wx:if="{{item.endTime}}">✅ {{item.endTime}}</text>
+                <text class="meta-item" wx:if="{{item.name === '印刷' && orderInfo.totalQty}}">📊 订单片数：{{orderInfo.totalQty}}</text>
+                <text class="meta-item" wx:if="{{item.name === '印刷' && item.producedQty}}">📈 生产片数：{{item.producedQty}}</text>
+              </view>
+              
+              <view class="process-actions">
+                <button wx:if="{{item.canStart || item.canFinish}}" class="action-btn primary" bindtap="onStartProcess" data-index="{{index}}">✅ 完成</button>
+                <!-- 质检按钮已移除 -->
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 操作记录区 - 整合质检记录 -->
+  <view class="operation-section" wx:if="{{operationRecords.length}}">
+    <view class="section-header">
+      <text class="section-title">操作记录</text>
+      <text class="record-count">共{{operationRecords.length}}条</text>
+    </view>
+    
+    <view class="operation-timeline">
+      <block wx:for="{{operationRecords}}" wx:key="index">
+        <view class="operation-item {{item.type}}">
+          <view class="operation-dot {{item.type}}"></view>
+          <view class="operation-content">
+            <view class="operation-text">{{item.content}}</view>
+            <view class="operation-meta">
+              <text class="operation-time">{{item.time}}</text>
+              <text class="operation-operator" wx:if="{{item.operator}}">{{item.operator}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 六、底部辅助区 -->
+  <view class="footer-area">
+    <view class="footer-actions">
+      <button class="footer-btn secondary" bindtap="onBack">返回</button>
+      <button class="footer-btn primary" bindtap="onPrintWorkorder">打印施工单</button>
+    </view>
+  </view>
+
+  <!-- 快速质检弹窗 -->
+  <view class="qc-modal" wx:if="{{showQcModal}}" catchtap="closeQcModal">
+    <view class="qc-content" catchtap="stopPropagation">
+      <view class="qc-title">快速质检</view>
+      <view class="qc-subtitle">{{currentQcProcess}}工序</view>
+      
+      <view class="qc-info">
+        <view class="qc-info-item">
+          <text class="qc-label">订单片数：</text>
+          <text class="qc-value">{{orderInfo.totalQty}} 片</text>
+        </view>
+        <view class="qc-info-item">
+          <text class="qc-label">生产片数：</text>
+          <input class="qc-input" type="number" placeholder="请输入实际生产片数" value="{{qcProducedQty}}" bindinput="onQcQtyInput" />
+        </view>
+      </view>
+      
+      <view class="qc-buttons">
+        <button class="qc-btn pass" bindtap="handleQcResult" data-result="合格">
+          合格
+        </button>
+        <button class="qc-btn fail" bindtap="onQcFailDetail">
+          不合格
+        </button>
+        <button class="qc-btn cancel" bindtap="closeQcModal">
+          取消
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

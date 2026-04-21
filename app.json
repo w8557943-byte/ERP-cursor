@@ -1,0 +1,126 @@
+{
+  "cloud": true,
+  "lazyCodeLoading": "requiredComponents",
+  "pages": [
+    "pages/login/login",
+    "pages/workbench/workbench",
+    "pages/order/order",
+    "pages/production/production",
+    "pages/profile/profile"
+  ],
+  "subpackages": [
+    {
+      "root": "pages/order-sub",
+      "pages": [
+        "create/create",
+        "detail/detail",
+        "order-create/order-create"
+      ]
+    },
+    {
+      "root": "pages/production-sub",
+      "pages": [
+        "detail/detail",
+        "production-detail/production-detail",
+        "print-quality/print-quality",
+        "workorder-print/workorder-print"
+      ]
+    },
+    {
+      "root": "pages/management-sub",
+      "pages": [
+        "data-management/data-management",
+        "customers/customers",
+        "customers/add-customer/add-customer",
+        "customers/edit/edit",
+        "customers/detail/detail",
+        "management/permissions/permissions",
+        "management/roles/roles",
+        "management/users/users"
+      ]
+    },
+    {
+      "root": "pages/shipping-sub",
+      "pages": [
+        "list/list",
+        "detail/detail",
+        "scan-generate/scan-generate",
+        "tracking/tracking"
+      ]
+    },
+    {
+      "root": "pages/purchase-sub",
+      "pages": [
+        "purchase/purchase",
+        "detail/detail",
+        "goods-purchase/goods-purchase",
+        "raw-material-purchase/raw-material-purchase"
+      ]
+    },
+    {
+      "root": "pages/inventory-sub",
+      "pages": [
+        "inventory/inventory"
+      ]
+    },
+    {
+      "root": "pages/system-sub",
+      "pages": [
+        "deploy-test/deploy-test",
+        "db-init/db-init",
+        "login/test-login",
+        "sync-loading/sync-loading"
+      ]
+    }
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1976d2",
+    "navigationBarTitleText": "荣禾纸箱ERP",
+    "navigationBarTextStyle": "white"
+  },
+  "permission": {
+    "scope.bluetooth": {
+      "desc": "用于连接蓝牙打印机完成打印"
+    },
+    "scope.userLocation": {
+      "desc": "用于搜索附近蓝牙打印机（安卓需要定位权限）"
+    }
+  },
+  "entryPagePath": "pages/login/login",
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#1976d2",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/workbench/workbench",
+        "text": "工作台",
+        "iconPath": "images/home.png",
+        "selectedIconPath": "images/home-active.png"
+      },
+      {
+        "pagePath": "pages/order/order",
+        "text": "订单",
+        "iconPath": "images/order.png",
+        "selectedIconPath": "images/order-active.png"
+      },
+      {
+        "pagePath": "pages/production/production",
+        "text": "生产",
+        "iconPath": "images/production.png",
+        "selectedIconPath": "images/production-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "系统管理",
+        "iconPath": "images/profile.png",
+        "selectedIconPath": "images/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

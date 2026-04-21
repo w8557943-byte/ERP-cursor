@@ -1,0 +1,1 @@
+{"name": "deploy-diagnosis", "version": "1.0.0", "description": "云函数部署诊断脚本", "main": "index.js", "dependencies": {"wx-server-sdk": "latest"}, "scripts": {"deploy": "echo '请在微信开发者工具中部署此云函数'", "test": "echo '请使用云开发环境测试'"}, "author": "荣禾ERP开发团队", "license": "MIT"}

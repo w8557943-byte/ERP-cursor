@@ -1,0 +1,75 @@
+<view class="page">
+  <view class="page-header">
+    <view class="header-card">
+      <image class="header-logo" src="/images/logo.png" mode="heightFix"></image>
+      <view class="header-info">
+        <text class="main-title">{{pageTitle}}</text>
+        <text class="sub-title">{{pageSubTitle}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-card">
+    <view class="form-item">
+      <text class="form-label">{{entityType === 'supplier' ? '供应商名称' : '客户名称'}}</text>
+      <input class="form-input" placeholder="{{entityType === 'supplier' ? '请输入供应商名称' : '请输入客户名称'}}" value="{{form.name}}" bindinput="onFormInput" data-field="name" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">{{entityType === 'supplier' ? '供应商简称' : '客户简称'}}</text>
+      <input class="form-input" placeholder="{{entityType === 'supplier' ? '请输入供应商简称' : '请输入客户简称'}}" value="{{form.shortName}}" bindinput="onFormInput" data-field="shortName" />
+    </view>
+
+    <view wx:if="{{entityType === 'customer'}}" class="form-item">
+      <text class="form-label">结款方式</text>
+      <picker class="form-picker" range="{{paymentOptions}}" bindchange="onPaymentChange">
+        <view class="picker-inner">
+          <text class="picker-text">{{form.paymentTerms || '请选择结款方式'}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view wx:if="{{entityType === 'supplier'}}" class="form-item">
+      <text class="form-label">行业</text>
+      <input class="form-input" placeholder="请输入行业" value="{{form.industry}}" bindinput="onFormInput" data-field="industry" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">联系人</text>
+      <input class="form-input" placeholder="请输入联系人姓名" value="{{form.contactName}}" bindinput="onFormInput" data-field="contactName" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">联系电话</text>
+      <input class="form-input" placeholder="请输入联系电话" value="{{form.phone}}" bindinput="onFormInput" data-field="phone" />
+    </view>
+
+    <view wx:if="{{entityType === 'customer'}}" class="form-item">
+      <text class="form-label">邮箱地址</text>
+      <input class="form-input" placeholder="请输入邮箱地址" value="{{form.email}}" bindinput="onFormInput" data-field="email" />
+    </view>
+
+    <view wx:if="{{entityType === 'customer'}}" class="form-item">
+      <text class="form-label">地址</text>
+      <textarea class="form-input textarea" placeholder="请输入详细地址" value="{{form.address}}" bindinput="onFormInput" data-field="address" />
+    </view>
+  </view>
+
+  <view class="status-card">
+    <view class="form-item form-item-compact">
+      <text class="form-label">状态</text>
+      <view class="switch-row">
+        <text class="switch-text">{{form.status === 'active' ? '活跃' : '停用'}}</text>
+        <switch checked="{{form.status === 'active'}}" color="#4f46e5" bindchange="onStatusSwitch" />
+      </view>
+    </view>
+  </view>
+
+  <view class="actions-card">
+    <view class="form-actions">
+      <button class="btn ghost" bindtap="onCancel" disabled="{{saving}}">取消</button>
+      <button class="btn primary" bindtap="onSubmit" loading="{{saving}}">{{submitText}}</button>
+    </view>
+  </view>
+</view>

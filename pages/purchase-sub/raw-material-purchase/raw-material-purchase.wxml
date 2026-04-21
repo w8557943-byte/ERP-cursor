@@ -1,0 +1,111 @@
+<view class="purchase-page">
+  <view class="page-header">
+    <text class="page-title">新建辅材采购</text>
+    <view class="header-actions">
+      <button class="save-btn" bindtap="submitForm">保存</button>
+    </view>
+  </view>
+
+  <view class="form-container">
+    <view class="form-section">
+      <view class="form-group">
+        <text class="form-label">供应商 <text class="required">*</text></text>
+        <picker 
+          class="status-picker" 
+          mode="selector"
+          range="{{supplierNames}}" 
+          bindchange="onSupplierPickerChange"
+        >
+          <view class="picker-value">
+            <text>{{form.supplierName || '请选择供应商'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">商品名称 <text class="required">*</text></text>
+        <input 
+          class="form-input" 
+          placeholder="请输入商品名称" 
+          value="{{form.goodsName}}" 
+          bindinput="onInput" 
+          data-field="goodsName"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">规格型号</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入规格型号" 
+          value="{{form.materialNo}}" 
+          bindinput="onInput" 
+          data-field="materialNo"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">采购数量 <text class="required">*</text></text>
+        <input 
+          class="form-input" 
+          type="digit" 
+          placeholder="请输入数量" 
+          value="{{form.quantity}}" 
+          bindinput="onInput" 
+          data-field="quantity"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">单位</text>
+        <picker 
+          class="status-picker" 
+          range="{{unitOptions}}" 
+          value="{{unitIndex}}"
+          bindchange="onUnitChange"
+        >
+          <view class="picker-value">
+            <text>{{form.unit || '请选择单位'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">进货单价 <text class="required">*</text></text>
+        <input 
+          class="form-input" 
+          type="digit" 
+          placeholder="0.00" 
+          value="{{form.salePrice}}" 
+          bindinput="onInput" 
+          data-field="salePrice"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">采购金额</text>
+        <view class="form-input disabled-input">
+          <text class="highlight">¥{{amount}}</text>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">备注</text>
+        <textarea 
+          class="form-textarea" 
+          placeholder="请输入备注信息" 
+          value="{{form.notes}}" 
+          bindinput="onInput" 
+          data-field="notes"
+        />
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-buttons">
+    <button class="btn-cancel" bindtap="goBack">取消</button>
+    <button class="btn-save" bindtap="submitForm">提交订单</button>
+  </view>
+</view>

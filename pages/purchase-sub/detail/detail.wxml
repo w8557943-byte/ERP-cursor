@@ -1,0 +1,143 @@
+<view class="detail-page {{order.isRawMaterial ? 'raw-material' : 'goods-order'}}" wx:if="{{order}}">
+  <view class="status-card {{order.status}}">
+    <view class="status-header">
+      <view class="status-left">
+        <text class="status-text">{{order.statusText}}</text>
+        <text class="order-no" wx:if="{{!order.isRawMaterial}}">订单号：{{order.orderNo}}</text>
+        <text class="order-no" wx:else>{{order.orderNo}}</text>
+      </view>
+      <view class="status-action" bindtap="onEdit">
+        <text class="edit-icon">✎</text>
+        <text>编辑</text>
+      </view>
+    </view>
+    <view class="status-desc" wx:if="{{order.status === 'stocked' || order.status === 'completed'}}">
+      入库时间：{{order.stockedAtText || '-'}}
+    </view>
+    <view class="status-desc" wx:else>
+      下单时间：{{order.createdAtText}}
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">基础信息</view>
+    <view class="info-row">
+      <text class="label">供应商</text>
+      <text class="value">{{order.supplierName || '-'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">客户名称</text>
+      <text class="value">{{order.customerName || '-'}}</text>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">商品信息</view>
+    <view class="info-row">
+      <text class="label">商品名称</text>
+      <text class="value highlight">{{order.goodsName}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">规格型号</text>
+      <text class="value">{{order.spec || order.materialNo || '-'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">采购数量</text>
+      <text class="value">{{order.quantity}} {{order.unit}}</text>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-title">财务信息</view>
+    <view class="info-row">
+      <text class="label">进货价</text>
+      <text class="value">¥{{order.purchasePrice}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">采购金额</text>
+      <text class="value">¥{{order.purchaseAmount}}</text>
+    </view>
+    
+    <block wx:if="{{!order.isRawMaterial || order.hasFinancialInfo}}">
+      <view class="divider"></view>
+      <view class="info-row">
+        <text class="label">售价</text>
+        <text class="value">¥{{order.sellingPrice}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">销售金额</text>
+        <text class="value">¥{{order.sellingAmount}}</text>
+      </view>
+      <view class="info-row highlight-row">
+        <text class="label">利润</text>
+        <text class="value profit">¥{{order.profit}}</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="section-card" wx:if="{{order.attachments && order.attachments.length > 0}}">
+    <view class="section-title">附件</view>
+    <view class="attachments-list">
+      <block wx:for="{{order.attachments}}" wx:key="uid">
+        <!-- 图片预览 -->
+        <view class="attachment-item" wx:if="{{item.isImage}}" bindtap="previewImage" data-url="{{item.url}}">
+          <image class="att-icon" src="{{item.url}}" mode="aspectFill"></image>
+          <text class="att-name">{{item.name}}</text>
+        </view>
+        <!-- 文件下载/打开 -->
+        <view class="attachment-item" wx:else bindtap="openDocument" data-url="{{item.url}}" data-type="{{item.ext}}">
+          <view class="file-icon">{{item.ext}}</view>
+          <text class="att-name">{{item.name}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="section-card" wx:if="{{order.notes}}">
+    <view class="section-title">备注</view>
+    <view class="notes">{{order.notes}}</view>
+  </view>
+
+  <!-- 编辑弹框 -->
+  <view class="modal-mask" wx:if="{{showEditModal}}" bindtap="closeEditModal"></view>
+  <view class="modal-container" wx:if="{{showEditModal}}">
+    <view class="modal-header">
+      <text class="modal-title">编辑采购单</text>
+      <text class="modal-close" bindtap="closeEditModal">×</text>
+    </view>
+    <scroll-view scroll-y class="modal-content" style="max-height: 60vh; padding: 20rpx 40rpx;">
+      <view class="input-group">
+        <text class="input-label">供应商</text>
+        <input class="modal-input" value="{{editForm.supplierName}}" data-field="supplierName" bindinput="onEditInput" placeholder="请输入供应商名称"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">客户名称</text>
+        <input class="modal-input" value="{{editForm.customerName}}" data-field="customerName" bindinput="onEditInput" placeholder="请输入客户名称"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">商品名称</text>
+        <input class="modal-input" value="{{editForm.goodsName}}" data-field="goodsName" bindinput="onEditInput" placeholder="请输入商品名称"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">规格型号</text>
+        <input class="modal-input" value="{{editForm.spec}}" data-field="spec" bindinput="onEditInput" placeholder="请输入规格型号"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">采购数量</text>
+        <input class="modal-input" type="digit" value="{{editForm.quantity}}" data-field="quantity" bindinput="onEditInput" placeholder="请输入数量"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">进货价</text>
+        <input class="modal-input" type="digit" value="{{editForm.unitPrice}}" data-field="unitPrice" bindinput="onEditInput" placeholder="请输入进货单价"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">售价</text>
+        <input class="modal-input" type="digit" value="{{editForm.productSellingPrice}}" data-field="productSellingPrice" bindinput="onEditInput" placeholder="请输入销售单价"/>
+      </view>
+    </scroll-view>
+    <view class="modal-footer">
+      <view class="modal-btn cancel" bindtap="closeEditModal">取消</view>
+      <view class="modal-btn confirm" bindtap="confirmEdit">保存</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,174 @@
+<view class="page">
+  <view class="header-card">
+    <view class="header-top">
+      <view class="order-no-wrap">
+        <text class="order-no">{{orderInfo.orderNo || orderNo || '-'}}</text>
+        <text class="copy-link" bindtap="onCopyOrderNo">复制</text>
+      </view>
+      <text class="status-badge st-{{orderStatusKey}}">{{orderInfo.statusText || orderInfo.status || '-'}}</text>
+    </view>
+    <view class="header-sub">
+      <text class="header-customer">{{orderInfo.customer.name || '-'}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="state state-loading">
+    <text class="state-text">加载中...</text>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="state state-error">
+    <text class="state-text">{{loadError}}</text>
+    <text class="state-sub">下拉刷新重试</text>
+  </view>
+
+  <view wx:else>
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">订单信息</text>
+      </view>
+      <view class="kv-list">
+        <view class="kv-row">
+          <text class="kv-k">联系人</text>
+          <text class="kv-v">{{orderInfo.customer.contact || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">产品类别</text>
+          <text class="kv-v">{{orderInfo.product.name || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">商品名称</text>
+          <text class="kv-v">{{orderInfo.product.title || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">规格</text>
+          <text class="kv-v">{{orderInfo.product.spec || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">物料号</text>
+          <text class="kv-v">{{orderInfo.product.materialNo || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">楞别</text>
+          <text class="kv-v">{{orderInfo.product.flute || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">纸板尺寸</text>
+          <text class="kv-v">{{orderInfo.product.boardSizeText || (orderInfo.product.boardWidth && orderInfo.product.boardHeight ? (orderInfo.product.boardWidth + ' × ' + orderInfo.product.boardHeight + ' mm') : '-')}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">压线尺寸</text>
+          <text class="kv-v">{{orderInfo.product.creaseText || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">合拢方式</text>
+          <text class="kv-v">{{orderInfo.joinMethod || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">下单时间</text>
+          <text class="kv-v">{{orderInfo.createdAt || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">交期</text>
+          <text class="kv-v">{{orderInfo.deadline || '-'}}</text>
+        </view>
+        <view class="kv-row kv-row-notes">
+          <text class="kv-k">备注</text>
+          <text class="kv-v kv-v-notes">{{orderInfo.notes || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">数量与金额</text>
+      </view>
+      <view class="kv-list">
+        <view class="kv-row">
+          <text class="kv-k">数量</text>
+          <text class="kv-v">{{orderInfo.product.quantity || 0}} {{orderInfo.product.unit}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">单价</text>
+          <text class="kv-v">¥{{orderInfo.product.unitPrice || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">金额</text>
+          <text class="kv-v">¥{{orderInfo.amount.total || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">定金</text>
+          <text class="kv-v">¥{{orderInfo.amount.deposit || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">尾款</text>
+          <text class="kv-v">¥{{orderInfo.amount.balance || 0}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card" wx:if="{{showShippingInfo}}">
+      <view class="section-header">
+        <text class="section-title">入库与发货</text>
+      </view>
+      <view class="kv-list">
+        <view class="kv-row">
+          <text class="kv-k">入库数量</text>
+          <text class="kv-v">{{shippingInfo.stockedQty || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">已发货</text>
+          <text class="kv-v">{{shippingInfo.shippedQty || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">库存</text>
+          <text class="kv-v">{{shippingInfo.inventoryQty || 0}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">入库时间</text>
+          <text class="kv-v">{{shippingInfo.stockedAtText || '-'}}</text>
+        </view>
+        <view class="kv-row">
+          <text class="kv-k">发货时间</text>
+          <text class="kv-v">{{shippingInfo.shippedAtText || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">图纸与附件</text>
+        <text class="section-sub">{{orderInfo.attachments.length || 0}} 个</text>
+      </view>
+      <view class="attachment-list" wx:if="{{orderInfo.attachments && orderInfo.attachments.length}}">
+        <block wx:for="{{orderInfo.attachments}}" wx:key="id">
+          <view class="attachment-item" bindtap="onDownloadAttachment" data-fileid="{{item.fileID}}" data-url="{{item.url}}" data-name="{{item.name}}">
+            <text class="attachment-name">{{item.name}}</text>
+            <text class="attachment-tag">查看</text>
+          </view>
+        </block>
+      </view>
+      <view class="kv-list" wx:else>
+        <view class="kv-row">
+          <text class="kv-k">提示</text>
+          <text class="kv-v">暂无附件</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-safe-space"></view>
+</view>
+
+<view class="footer-area">
+  <block wx:if="{{fromScan}}">
+    <button class="btn btn-primary" size="mini" bindtap="onPrintWorkOrder">打印施工单</button>
+    <button class="btn btn-ghost" size="mini" bindtap="goBack">返回</button>
+  </block>
+  <block wx:else>
+    <button class="btn btn-primary" size="mini" bindtap="onPrintWorkOrder">打印施工单</button>
+    <button class="btn btn-danger" size="mini" bindtap="onDeleteOrder">删除订单</button>
+    <button class="btn btn-ghost" size="mini" bindtap="onEditOrder">编辑</button>
+    <button class="btn btn-primary" size="mini" bindtap="onReorder">再次下单</button>
+    <button class="btn btn-ghost" size="mini" bindtap="goBack">返回</button>
+  </block>
+</view>

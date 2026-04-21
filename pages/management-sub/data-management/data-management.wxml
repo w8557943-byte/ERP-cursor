@@ -1,0 +1,85 @@
+<view class="dm-page">
+  <view class="dm-header">
+    <view class="dm-header-card">
+      <view class="dm-header-icon"><text class="dm-header-icon-text">📊</text></view>
+      <view class="dm-header-info">
+        <text class="dm-title">数据管理</text>
+        <text class="dm-subtitle">{{rangeText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="dm-nav">
+    <view class="dm-nav-item {{activeTab === 'business' ? 'active' : ''}}" data-tab="business" bindtap="switchTab">
+      <view class="dm-nav-icon business">
+        <text class="dm-nav-icon-text">📈</text>
+      </view>
+      <text class="dm-nav-label">经营数据</text>
+    </view>
+    <view class="dm-nav-item {{activeTab === 'finance' ? 'active' : ''}}" data-tab="finance" bindtap="switchTab">
+      <view class="dm-nav-icon finance">
+        <text class="dm-nav-icon-text">💰</text>
+      </view>
+      <text class="dm-nav-label">财务数据</text>
+    </view>
+  </view>
+
+  <view class="dm-body">
+    <view class="dm-section" wx:if="{{activeTab === 'business'}}">
+      <view class="dm-card-grid">
+        <view class="dm-stat-card" bindtap="showMonthSalesDetail">
+          <text class="dm-stat-label">本月销售额</text>
+          <text class="dm-stat-value">¥{{businessStats.monthSalesText}}</text>
+        </view>
+        <view class="dm-stat-card">
+          <text class="dm-stat-label">今日销售额</text>
+          <text class="dm-stat-value">¥{{businessStats.todaySalesText}}</text>
+        </view>
+      </view>
+
+      <view class="dm-chart-card">
+        <view class="dm-chart-header">
+          <view class="dm-chart-title">销售额趋势图</view>
+          <view class="dm-trend-switch">
+            <view class="dm-trend-item {{salesTrendRange === 'month' ? 'active' : ''}}" data-range="month" bindtap="switchSalesTrendRange">本月</view>
+            <view class="dm-trend-item {{salesTrendRange === '3m' ? 'active' : ''}}" data-range="3m" bindtap="switchSalesTrendRange">近3月</view>
+            <view class="dm-trend-item {{salesTrendRange === '6m' ? 'active' : ''}}" data-range="6m" bindtap="switchSalesTrendRange">近半年</view>
+            <view class="dm-trend-item {{salesTrendRange === 'year' ? 'active' : ''}}" data-range="year" bindtap="switchSalesTrendRange">全年</view>
+          </view>
+        </view>
+        <view class="dm-chart-box">
+          <ec-canvas id="salesTrendChart" canvas-id="salesTrendChart" ec="{{salesTrendEc}}"></ec-canvas>
+        </view>
+      </view>
+    </view>
+
+    <view class="dm-section" wx:if="{{activeTab === 'finance'}}">
+      <view class="dm-card-grid">
+        <view class="dm-stat-card">
+          <text class="dm-stat-label">本月开票金额</text>
+          <text class="dm-stat-value">¥{{financeStats.monthInvoicedText}}</text>
+        </view>
+        <view class="dm-stat-card">
+          <text class="dm-stat-label">本月进项金额</text>
+          <text class="dm-stat-value">¥{{financeStats.monthInputText}}</text>
+        </view>
+        <view class="dm-stat-card">
+          <text class="dm-stat-label">本月逾期未付金额</text>
+          <text class="dm-stat-value">¥{{financeStats.monthOverdueUnpaidText}}</text>
+        </view>
+        <view class="dm-stat-card">
+          <text class="dm-stat-label">本月税额</text>
+          <text class="dm-stat-value">¥{{financeStats.monthTaxText}}</text>
+        </view>
+      </view>
+
+      <view class="dm-chart-card">
+        <view class="dm-chart-title">收支结构图</view>
+        <view class="dm-chart-box">
+          <ec-canvas id="incomeExpenseChart" canvas-id="incomeExpenseChart" ec="{{incomeExpenseEc}}"></ec-canvas>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</view>

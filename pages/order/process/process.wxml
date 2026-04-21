@@ -1,0 +1,4 @@
+<view class="container">
+  <text>订单处理页面</text>
+  <text>订单ID: {{orderId}}</text>
+</view>

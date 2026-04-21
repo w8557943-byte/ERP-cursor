@@ -1,0 +1,56 @@
+<view class="db-init-page">
+  <view class="header">
+    <text class="title">数据库初始化工具</text>
+    <text class="subtitle">用于初始化荣禾ERP系统的数据库</text>
+  </view>
+
+  <view class="content">
+    <view class="buttons-section">
+      <button 
+        class="init-btn" 
+        bindtap="initDatabase"
+        loading="{{loading}}"
+        disabled="{{loading}}"
+      >
+        {{loading ? '初始化中...' : '初始化数据库'}}
+      </button>
+      
+      <button 
+        class="validate-btn" 
+        bindtap="validateSetup"
+        loading="{{loading}}"
+        disabled="{{loading}}"
+      >
+        {{loading ? '验证中...' : '验证数据库状态'}}
+      </button>
+
+      <button
+        class="validate-btn"
+        bindtap="resetAdminPassword"
+        loading="{{loading}}"
+        disabled="{{loading}}"
+      >
+        {{loading ? '处理中...' : '重置管理员密码'}}
+      </button>
+      
+      <button 
+        class="clear-btn" 
+        bindtap="clearResult"
+        disabled="{{loading}}"
+      >
+        清空结果
+      </button>
+    </view>
+
+    <view class="result-section">
+      <text class="result-title">操作结果：</text>
+      <scroll-view class="result-content" scroll-y="true">
+        <text class="result-text">{{result}}</text>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="back-btn" bindtap="goBack">返回登录页</button>
+  </view>
+</view>

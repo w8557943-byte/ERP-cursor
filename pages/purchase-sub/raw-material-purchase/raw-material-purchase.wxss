@@ -1,0 +1,205 @@
+/* 新建辅材采购页面样式 */
+.purchase-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4eaf1 100%);
+  padding-bottom: 120rpx;
+}
+
+/* 页面头部 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40rpx 32rpx;
+  background: #1976d2;
+  box-shadow: 0 4rpx 20rpx rgba(25, 118, 210, 0.3);
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.save-btn {
+  padding: 16rpx 28rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #52c41a;
+  min-width: 140rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.save-btn:active {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(0.95);
+}
+
+/* 表单容器 */
+.form-container {
+  padding: 32rpx;
+}
+
+.form-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.form-group {
+  margin-bottom: 48rpx;
+  position: relative;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 30rpx;
+  color: #2c3e50;
+  margin-bottom: 16rpx;
+  font-weight: 600;
+  letter-spacing: 0.5rpx;
+}
+
+.required {
+  color: #ff4d4f;
+  margin-left: 8rpx;
+}
+
+.form-input, .form-textarea, .disabled-input {
+  width: 100%;
+  padding: 32rpx;
+  border: 2rpx solid #e8e8e8;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  background: #fafafa;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  color: #2c3e50;
+  min-height: 100rpx;
+}
+
+.disabled-input {
+  background-color: #f5f5f5;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.form-input:focus, .form-textarea:focus {
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.form-textarea {
+  height: 160rpx;
+  resize: none;
+  line-height: 1.5;
+}
+
+.highlight {
+  color: #ff4d4f;
+  font-weight: bold;
+  font-size: 32rpx;
+}
+
+/* Picker 样式 */
+.status-picker {
+  width: 100%;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx;
+  border: 2rpx solid #e8e8e8;
+  border-radius: 12rpx;
+  background: #fafafa;
+  font-size: 34rpx;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  min-height: 100rpx;
+  box-sizing: border-box;
+}
+
+.picker-value:active {
+  background: #f0f0f0;
+}
+
+.picker-arrow {
+  color: #999;
+  font-size: 22rpx;
+  transition: transform 0.3s ease;
+}
+
+/* 底部按钮 */
+.footer-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 24rpx 32rpx;
+  border-top: 1rpx solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+.btn-cancel {
+  padding: 24rpx 40rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  min-width: 160rpx;
+  font-weight: 500;
+  text-align: center;
+}
+
+.btn-cancel:active {
+  background: #e9ecef;
+  transform: scale(0.98);
+}
+
+.btn-save {
+  padding: 24rpx 48rpx;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border: none;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: white;
+  transition: all 0.3s ease;
+  min-width: 200rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 16rpx rgba(25, 118, 210, 0.3);
+}
+
+.btn-save:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(25, 118, 210, 0.4);
+}

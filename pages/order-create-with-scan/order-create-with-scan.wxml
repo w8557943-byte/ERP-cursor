@@ -1,0 +1,191 @@
+<view class="order-create-page">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <view class="header-content">
+      <text class="page-title">扫码创建订单</text>
+      <view class="header-actions">
+        <button class="reset-btn" bindtap="resetForm">重置</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 扫码功能区 -->
+  <view class="scan-section">
+    <text class="section-title">扫码录入</text>
+    <view class="scan-buttons">
+      <view class="scan-btn-group">
+        <button class="scan-btn" bindtap="scanCustomerQR">
+          <text class="scan-icon">📱</text>
+          <text class="scan-text">扫客户</text>
+        </button>
+        <button class="scan-btn" bindtap="scanProductBarcode">
+          <text class="scan-icon">📊</text>
+          <text class="scan-text">扫产品</text>
+        </button>
+        <button class="scan-btn" bindtap="scanSpecificationQR">
+          <text class="scan-icon">📏</text>
+          <text class="scan-text">扫规格</text>
+        </button>
+        <button class="scan-btn" bindtap="scanMaterialBarcode">
+          <text class="scan-icon">📦</text>
+          <text class="scan-text">扫材料</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 扫码结果显示 -->
+  <view class="scan-results" wx:if="{{scanResults.customer || scanResults.product || scanResults.spec || scanResults.material}}">
+    <text class="section-title">扫码结果</text>
+    <view class="result-grid">
+      <view class="result-item" wx:if="{{scanResults.customer}}">
+        <text class="result-label">客户：</text>
+        <text class="result-value">{{scanResults.customer}}</text>
+      </view>
+      <view class="result-item" wx:if="{{scanResults.product}}">
+        <text class="result-label">产品：</text>
+        <text class="result-value">{{scanResults.product}}</text>
+      </view>
+      <view class="result-item" wx:if="{{scanResults.spec}}">
+        <text class="result-label">规格：</text>
+        <text class="result-value">{{scanResults.spec}}</text>
+      </view>
+      <view class="result-item" wx:if="{{scanResults.material}}">
+        <text class="result-label">材料：</text>
+        <text class="result-value">{{scanResults.material}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单信息表单 -->
+  <scroll-view class="form-content" scroll-y="true">
+    <!-- 基础信息 -->
+    <view class="form-section">
+      <text class="section-title">订单信息</text>
+      
+      <view class="form-item">
+        <text class="item-label">订单编号</text>
+        <input class="input-field" value="{{orderInfo.orderNo}}" disabled placeholder="自动生成" />
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label required">客户名称</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.customerInfo.name}}" 
+          placeholder="扫码或手动输入客户名称"
+          bindinput="onInputChange"
+          data-field="customerInfo.name"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">联系人</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.customerInfo.contact}}" 
+          placeholder="联系人姓名"
+          bindinput="onInputChange"
+          data-field="customerInfo.contact"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">联系电话</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.customerInfo.phone}}" 
+          placeholder="联系电话"
+          bindinput="onInputChange"
+          data-field="customerInfo.phone"
+        />
+      </view>
+    </view>
+
+    <!-- 产品信息 -->
+    <view class="form-section">
+      <text class="section-title">产品信息</text>
+      
+      <view class="form-item">
+        <text class="item-label required">产品类别</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.productInfo.name}}" 
+          placeholder="扫码或手动输入产品类别"
+          bindinput="onInputChange"
+          data-field="productInfo.name"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">产品规格</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.specifications}}" 
+          placeholder="扫码或手动输入规格"
+          bindinput="onInputChange"
+          data-field="specifications"
+        />
+      </view>
+      
+      <view class="form-item-row">
+        <view class="form-item half">
+          <text class="item-label required">数量</text>
+          <input 
+            class="input-field" 
+            type="number"
+            value="{{orderInfo.quantity}}" 
+            placeholder="0"
+            bindinput="onInputChange"
+            data-field="quantity"
+          />
+        </view>
+        
+        <view class="form-item half">
+          <text class="item-label required">单价</text>
+          <input 
+            class="input-field" 
+            type="digit"
+            value="{{orderInfo.unitPrice}}" 
+            placeholder="0.00"
+            bindinput="onInputChange"
+            data-field="unitPrice"
+          />
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">总价</text>
+        <input 
+          class="input-field" 
+          value="{{orderInfo.totalPrice}}" 
+          disabled
+          placeholder="自动计算"
+        />
+      </view>
+    </view>
+
+    <!-- 备注信息 -->
+    <view class="form-section">
+      <text class="section-title">备注信息</text>
+      
+      <view class="form-item">
+        <text class="item-label">订单备注</text>
+        <textarea 
+          class="textarea-field" 
+          value="{{orderInfo.notes}}" 
+          placeholder="订单备注信息（材料、工艺要求等）"
+          bindinput="onInputChange"
+          data-field="notes"
+        ></textarea>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <button class="save-btn" bindtap="saveOrder">
+      <text class="btn-text">保存订单</text>
+    </button>
+  </view>
+</view>

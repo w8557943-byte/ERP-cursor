@@ -1,0 +1,4 @@
+.container{padding:16px}
+.header{font-size:16px;margin-bottom:12px}
+.form-item{margin-bottom:12px}
+input{border:1px solid #ddd;border-radius:6px;padding:8px}

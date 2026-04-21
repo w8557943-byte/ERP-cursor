@@ -1,0 +1,72 @@
+<view class="container">
+  <!-- 订单信息 -->
+  <view class="order-info">
+    <view class="order-header">
+      <text class="order-no">{{orderInfo.orderNo}}</text>
+      <text class="order-status {{orderInfo.status === '合格' ? 'status-pass' : orderInfo.status === '不合格' ? 'status-fail' : 'status-pending'}}">
+        {{orderInfo.status}}
+      </text>
+    </view>
+    <view class="order-details">
+      <view class="detail-row">
+        <text class="label">产品类别：</text>
+        <text class="value">{{orderInfo.productName}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="label">规格：</text>
+        <text class="value">{{orderInfo.spec}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="label">客户：</text>
+        <text class="value">{{orderInfo.customer}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="label">订单数量：</text>
+        <text class="value">{{orderInfo.totalQty}} 个</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 印刷质检项目 -->
+  <view class="section">
+    <view class="section-title">印刷质检项目</view>
+    <view class="qc-items">
+      <view class="qc-item" wx:for="{{printQcItems}}" wx:key="index">
+        <text class="item-name">{{item.name}}</text>
+        <view class="item-status {{item.status === '合格' ? 'status-pass' : item.status === '不合格' ? 'status-fail' : 'status-pending'}}">
+          {{item.status}}
+        </view>
+        <view class="item-actions" wx:if="{{item.status === '待检'}}">
+          <button class="btn-small btn-pass" bindtap="onQcItemPass" data-index="{{index}}">合格</button>
+          <button class="btn-small btn-fail" bindtap="onQcItemFail" data-index="{{index}}">不合格</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 质检结果 -->
+  <view class="section">
+    <view class="section-title">质检结果</view>
+    <view class="qc-result">
+      <text class="result-text {{qcResult === '合格' ? 'result-pass' : qcResult === '不合格' ? 'result-fail' : ''}}">
+        {{qcResult}}
+      </text>
+      <button class="btn-primary" bindtap="onSubmitQc" wx:if="{{qcResult !== '待检'}}">提交结果</button>
+    </view>
+  </view>
+
+  <!-- 操作记录 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">操作记录</text>
+      <text class="toggle-link" bindtap="onToggleLog">{{showLog ? '收起' : '展开'}}</text>
+    </view>
+    <view class="operation-logs" wx:if="{{showLog}}">
+      <view class="log-item" wx:for="{{operationLogs}}" wx:key="index">
+        <text class="log-time">{{item.time}}</text>
+        <text class="log-content">{{item.content}}</text>
+      </view>
+      <view class="no-data" wx:if="{{operationLogs.length === 0}}">暂无操作记录</view>
+    </view>
+  </view>
+</view>

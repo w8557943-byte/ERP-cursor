@@ -1,0 +1,191 @@
+<view class="profile-page">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-avatar">
+      <image class="avatar-image" src="../../images/logo.png" mode="aspectFit" />
+    </view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.name}}</text>
+      <text class="user-role">{{(userInfo.role === 'admin' || userInfo.role === 'administrator') ? '系统管理员' : '普通用户'}}</text>
+      <text class="user-company" wx:if="{{userInfo.companyName}}">{{userInfo.companyName}}</text>
+    </view>
+    <view class="user-stats">
+      <view class="stat-item">
+        <text class="stat-number">{{monthOrderCount}}</text>
+        <text class="stat-label">本月订单</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{usageDays}}</text>
+        <text class="stat-label">使用天数</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="device-section">
+    <text class="section-title">设备连接</text>
+    <view class="device-card">
+      <view class="device-info">
+        <text class="device-status">
+          {{connectedPrinterName ? ('已连接：' + connectedPrinterName) : '未连接打印机'}}
+        </text>
+      </view>
+      <button class="device-btn" bindtap="connectPrinter" loading="{{bluetoothInitializing}}">
+        {{connectedPrinterName ? '重新连接打印机' : '连接打印机'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <text class="section-title">账户管理</text>
+    <view class="menu-list">
+      <block wx:for="{{menuItems}}" wx:key="action">
+        <view 
+          class="menu-item {{item.adminOnly && !isAdmin ? 'disabled' : ''}}" 
+          bindtap="onMenuItemTap" 
+          data-action="{{item.action}}"
+        >
+          <view class="menu-icon">{{item.icon}}</view>
+          <view class="menu-content">
+            <text class="menu-title">{{item.title}}</text>
+            <text class="menu-description">{{item.description}}</text>
+          </view>
+          <view class="menu-badge" wx:if="{{item.action === 'notifications' && notificationCount > 0}}">
+            {{notificationCount > 99 ? '99+' : notificationCount}}
+          </view>
+          <view class="menu-arrow">
+            <text class="arrow-icon">{{item.action === 'notifications' ? (notificationsExpanded ? '˄' : '˅') : '›'}}</text>
+          </view>
+        </view>
+
+        <view class="notification-panel" wx:if="{{item.action === 'notifications' && notificationsExpanded}}">
+          <view class="notification-loading" wx:if="{{notificationLoading}}">加载中...</view>
+          <view class="notification-empty" wx:elif="{{!notificationLoading && (!notificationReminders || notificationReminders.length === 0)}}">暂无提醒</view>
+          <block wx:else>
+            <view class="notification-item" wx:for="{{notificationReminders}}" wx:for-item="notice" wx:key="title">
+              <view class="notification-title">{{notice.title}}</view>
+              <view class="notification-count">{{notice.count}}</view>
+            </view>
+          </block>
+        </view>
+
+        <view id="profileInlineForm" class="inline-form" wx:if="{{item.action === 'editProfile' && profileEditVisible}}">
+          <view class="form-card">
+            <view class="form-item">
+              <text class="form-label">名称</text>
+              <input class="form-input" value="{{profileForm.name}}" maxlength="50" placeholder="请输入名称" data-field="name" bindinput="onProfileInput" />
+            </view>
+            <view class="form-item">
+              <text class="form-label">公司名称</text>
+              <input class="form-input" value="{{profileForm.companyName}}" maxlength="100" placeholder="请输入公司名称" data-field="companyName" bindinput="onProfileInput" />
+            </view>
+            <view class="form-item form-item-textarea">
+              <text class="form-label">简介</text>
+              <textarea class="form-textarea" value="{{profileForm.introduction}}" maxlength="200" placeholder="请输入简介" data-field="introduction" bindinput="onProfileInput"></textarea>
+            </view>
+            <view class="form-actions">
+              <button class="form-btn form-btn-primary" bindtap="saveProfile" loading="{{profileSaving}}">保存</button>
+              <button class="form-btn" bindtap="cancelEditProfile" disabled="{{profileSaving}}">取消</button>
+            </view>
+          </view>
+        </view>
+
+        <view id="passwordInlineForm" class="inline-form" wx:if="{{item.action === 'changePassword' && passwordEditVisible}}">
+          <view class="form-card">
+            <view class="form-item">
+              <text class="form-label">登录名</text>
+              <input class="form-input" value="{{passwordForm.username}}" maxlength="50" placeholder="登录名" disabled="{{true}}" />
+            </view>
+            <view class="form-item">
+              <text class="form-label">原密码</text>
+              <input class="form-input" value="{{passwordForm.oldPassword}}" maxlength="50" placeholder="请输入原密码" password="{{true}}" data-field="oldPassword" bindinput="onPasswordInput" />
+            </view>
+            <view class="form-item">
+              <text class="form-label">新密码</text>
+              <input class="form-input" value="{{passwordForm.newPassword}}" maxlength="50" placeholder="请输入新密码（至少6位）" password="{{true}}" data-field="newPassword" bindinput="onPasswordInput" />
+            </view>
+            <view class="form-item">
+              <text class="form-label">确认新密码</text>
+              <input class="form-input" value="{{passwordForm.confirmPassword}}" maxlength="50" placeholder="请再次输入新密码" password="{{true}}" data-field="confirmPassword" bindinput="onPasswordInput" />
+            </view>
+            <view class="form-actions">
+              <button class="form-btn form-btn-primary" bindtap="savePassword" loading="{{passwordSaving}}">保存</button>
+              <button class="form-btn" bindtap="cancelChangePassword" disabled="{{passwordSaving}}">取消</button>
+            </view>
+          </view>
+        </view>
+
+        <view id="backupInlineForm" class="inline-form" wx:if="{{item.action === 'dataBackup' && backupVisible}}">
+          <view class="form-card">
+            <view class="form-item">
+              <text class="form-label">备份开关</text>
+              <switch checked="{{backupConfig.enabled}}" bindchange="onBackupEnabledChange" disabled="{{backupInProgress}}" />
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">备份模式</text>
+              <radio-group bindchange="onBackupModeChange">
+                <label class="radio-item">
+                  <radio value="manual" checked="{{backupConfig.mode === 'manual'}}" disabled="{{backupInProgress}}" />
+                  <text class="radio-text">手动备份</text>
+                </label>
+                <label class="radio-item">
+                  <radio value="schedule" checked="{{backupConfig.mode === 'schedule'}}" disabled="{{backupInProgress}}" />
+                  <text class="radio-text">定时备份</text>
+                </label>
+                <label class="radio-item">
+                  <radio value="exit" checked="{{backupConfig.mode === 'exit'}}" disabled="{{backupInProgress}}" />
+                  <text class="radio-text">退出备份（差异上传）</text>
+                </label>
+              </radio-group>
+            </view>
+
+            <view class="form-item" wx:if="{{backupConfig.mode === 'schedule'}}">
+              <text class="form-label">定时间隔（仅 Wi-Fi）</text>
+              <picker mode="selector" range="{{['1小时','6小时','24小时']}}" bindchange="onBackupIntervalChange" disabled="{{backupInProgress}}">
+                <view class="picker-value">{{backupConfig.interval ? (backupConfig.interval + '小时') : '请选择'}}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">上次备份时间</text>
+              <view class="kv-value">{{backupLastTimeText}}</view>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">备份文件大小</text>
+              <view class="kv-value">{{backupSizeText}}</view>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">下次定时备份倒计时</text>
+              <view class="kv-value">{{backupCountdownText}}</view>
+            </view>
+
+            <view class="form-item" wx:if="{{backupInProgress}}">
+              <progress percent="{{backupProgress}}" active="{{true}}" stroke-width="10" />
+              <view class="progress-text">{{backupProgress}}%</view>
+            </view>
+
+            <view class="form-actions">
+              <button class="form-btn form-btn-primary" bindtap="runBackupNow" loading="{{backupInProgress}}" disabled="{{!backupConfig.enabled}}">一键导出并上传</button>
+              <button class="form-btn" bindtap="refreshBackupStats" disabled="{{backupInProgress}}">刷新</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-section">
+    <button class="logout-btn" bindtap="logout">退出登入</button>
+  </view>
+
+  <view class="brand-section">
+    <text class="brand-title">荣禾ERP</text>
+    <text class="brand-subtitle">专业的纸箱生产管理软件</text>
+    <view class="brand-gap"></view>
+    <text class="brand-version">版本号：{{appVersion || '—'}}</text>
+  </view>
+</view>

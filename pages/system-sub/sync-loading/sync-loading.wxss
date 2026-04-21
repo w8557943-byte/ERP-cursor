@@ -1,0 +1,63 @@
+.container {
+  min-height: 100vh;
+  padding: 60rpx 40rpx;
+  box-sizing: border-box;
+  background: #f6f7fb;
+}
+
+.title {
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.desc {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #6b7280;
+}
+
+.progress-wrap {
+  margin-top: 60rpx;
+  padding: 40rpx 30rpx;
+  background: #ffffff;
+  border-radius: 18rpx;
+}
+
+.progress-text {
+  margin-top: 20rpx;
+  text-align: right;
+  font-size: 26rpx;
+  color: #374151;
+}
+
+.error {
+  margin-top: 40rpx;
+  padding: 30rpx;
+  background: #ffffff;
+  border-radius: 18rpx;
+  border: 2rpx solid rgba(220, 38, 38, 0.2);
+}
+
+.error-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.error-msg {
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  color: #7f1d1d;
+}
+
+.actions {
+  margin-top: 26rpx;
+  display: flex;
+  gap: 18rpx;
+}
+
+.actions button {
+  flex: 1;
+}
+

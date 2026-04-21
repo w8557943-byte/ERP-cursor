@@ -1,0 +1,76 @@
+name: Build ERP Desktop App
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd app/frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd app/frontend
+          npm run build
+
+      - name: Build macOS
+        run: |
+          cd app/frontend
+          npm run preelectron:build
+          npm run electron:build -- --mac
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: app/frontend/dist-electron-win/*.dmg
+          retention-days: 7
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd app/frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd app/frontend
+          npm run build
+
+      - name: Build Windows
+        run: |
+          cd app/frontend
+          npm run preelectron:build
+          npm run electron:build -- --win nsis --x64
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: app/frontend/dist-electron-win-*/rongjiahe-erp-*-setup.exe
+          retention-days: 7

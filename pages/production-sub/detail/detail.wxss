@@ -1,0 +1,368 @@
+/* 顶部基础信息区 */
+.order-info {
+  padding: 20rpx;
+  background: #fff;
+  margin-bottom: 20rpx;
+}
+
+.order-no {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.order-no-left {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.order-status {
+  display: inline-block;
+  margin-bottom: 16rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  font-size: 36rpx;
+  font-weight: bold;
+  background: #eef2ff;
+  color: #2563eb;
+}
+
+.order-info-heading {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #111827;
+  display: block;
+  text-align: left;
+  margin: 10rpx 0 10rpx 0;
+}
+
+.order-no-text {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.copy-btn {
+  background: #007aff;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32rpx;
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  white-space: nowrap;
+  margin: 0;
+  border: 0;
+}
+
+.order-base { display: flex; flex-direction: column; gap: 10rpx; }
+.info-row { display: flex; flex-direction: row; align-items: baseline; padding: 8rpx 0; }
+.info-label { color: #374151; font-size: 32rpx; width: 180rpx; flex-shrink: 0; }
+.info-value { color: #111827; font-size: 32rpx; font-weight: 500; flex: 1; }
+
+/* 操作记录区 */
+.drawing-area { background: #fff; margin-bottom: 20rpx; padding: 20rpx; }
+.drawing-header { margin-bottom: 12rpx; }
+.drawing-title { font-size: 32rpx; font-weight: bold; }
+.drawing-image { width: 100%; border-radius: 8rpx; }
+.drawing-placeholder { padding: 20rpx; text-align: center; color: #9ca3af; background: #f9fafb; border: 1rpx dashed #e5e7eb; border-radius: 8rpx; }
+
+/* 质检历史区 */
+.qc-history-area {
+  background: #fff;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+}
+
+.qc-history-header {
+  margin-bottom: 20rpx;
+}
+
+.qc-history-title {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.qc-history-item {
+  padding: 15rpx;
+  margin-bottom: 15rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.qc-process {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.qc-result { font-size: 26rpx; margin-bottom: 5rpx; }
+.qc-result.ok { color: #00b51d; }
+.qc-result.fail { color: #ff3b30; }
+
+.qc-time {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 5rpx;
+}
+
+.qc-reason {
+  font-size: 24rpx;
+  color: #ff3b30;
+}
+
+/* 工序详情区 */
+.process-detail-area {
+  background: #fff;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+}
+
+.process-detail-header {
+  margin-bottom: 20rpx;
+}
+
+.process-detail-title {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.process-item {
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  border-left: 6rpx solid #007aff;
+}
+
+.process-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15rpx;
+}
+
+.process-name {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+.process-status {
+  font-size: 26rpx;
+  padding: 5rpx 15rpx;
+  border-radius: 20rpx;
+}
+
+.process-status.st-pending { background: #ffe9e9; color: #ff3b30; }
+.process-status.st-processing { background: #e8f4ff; color: #007aff; }
+.process-status.st-done { background: #e9ffe9; color: #00b51d; }
+
+.process-time {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+ .process-operator { display: none; }
+
+/* 进度与状态提示 */
+.progress-area {
+  background: #fff;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.four-progress {
+  display: flex;
+  gap: 12rpx;
+}
+
+.seg {
+  flex: 1;
+  height: 16rpx;
+  background: #e5e7eb;
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.seg-fill {
+  height: 100%;
+  background: #22c55e;
+}
+
+.progress-text {
+  display: block;
+  text-align: center;
+  margin: 20rpx 0;
+  font-size: 28rpx;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.status-tag.st-pending { background: #ffe9e9; color: #ff3b30; }
+.status-tag.st-processing { background: #e8f4ff; color: #007aff; }
+.status-tag.st-printed { background: #e9ffe9; color: #00b51d; }
+.status-tag.st-stocked { background: #eef2ff; color: #2563eb; }
+
+/* 底部辅助区 */
+.footer-area {
+  padding: 20rpx;
+  display: flex;
+  gap: 16rpx;
+  justify-content: center;
+}
+
+.back-btn {
+  background: #f8f8f8;
+  border: 1rpx solid #ddd;
+}
+
+.start-btn {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+}
+.metrics-area {
+  margin-top: 16rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.metric-card {
+  flex: 1;
+  background: #fff;
+  border: 1rpx solid #eef2ff;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  align-items: center;
+}
+
+.metric-label {
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+.metric-value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #111827;
+}
+
+ .stock-info { display: none; }
+ .stocked-row { display: none; }
+.process-ops { display: flex; flex-direction: column; gap: 8rpx; margin-top: 10rpx; }
+.op-row { display: flex; justify-content: space-between; }
+.op-label { color: #374151; font-size: 26rpx; }
+.op-value { color: #111827; font-size: 28rpx; font-weight: normal; }
+
+/* 移除新增订单信息区样式（保留更大的基础信息字号） */
+.copy-link {
+  color: #2563eb;
+  font-size: 24rpx;
+  line-height: 32rpx;
+  padding: 0;
+  margin: 0;
+}
+
+/* 弹窗覆盖样式 */
+.dialog-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dialog-panel {
+  margin-top: 80rpx;
+  width: 86%;
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 12rpx 32rpx rgba(0,0,0,0.12);
+}
+
+.dialog-title {
+  padding: 24rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1rpx solid #eee;
+}
+
+.dialog-body {
+  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.dialog-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.dialog-label {
+  color: #64748b;
+  width: 160rpx;
+  flex-shrink: 0;
+  font-size: 28rpx;
+}
+
+.dialog-value {
+  color: #111827;
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+}
+
+.dialog-input-row {
+  padding: 10rpx 0;
+}
+
+.dialog-input {
+  width: 100%;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 8rpx;
+  padding: 12rpx 16rpx;
+  font-size: 28rpx;
+}
+
+.dialog-actions {
+  border-top: 1rpx solid #eee;
+  padding: 16rpx;
+  display: flex;
+  gap: 16rpx;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  background: #f8f8f8;
+  border: 1rpx solid #e5e7eb;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}

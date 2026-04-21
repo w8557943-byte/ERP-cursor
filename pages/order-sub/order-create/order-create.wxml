@@ -1,0 +1,241 @@
+<view class="order-create-page">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="header-content">
+      <text class="page-title">创建新订单</text>
+      <view class="header-actions">
+        <button class="action-btn" bindtap="saveDraft">保存草稿</button>
+        <button class="action-btn" bindtap="loadDraft">加载草稿</button>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="form-content" scroll-y="true">
+    <!-- 基础信息 -->
+    <view class="form-section">
+      <view class="section-title">
+        <text class="title-text">基础信息</text>
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">订单编号</text>
+        <input class="input-field" value="{{orderNumber}}" disabled placeholder="自动生成" />
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label required">客户名称</text>
+        <view class="customer-selector" bindtap="selectCustomer">
+          <text class="selector-text">{{customerName || '请选择客户'}}</text>
+          <text class="selector-arrow">></text>
+        </view>
+      </view>
+      
+      <view class="form-item-row">
+        <view class="form-item half">
+          <text class="item-label required">订单日期</text>
+          <picker mode="date" value="{{orderDate}}" bindchange="onOrderDateChange">
+            <view class="picker-field">
+              {{orderDate || '请选择日期'}}
+            </view>
+          </picker>
+        </view>
+        
+        <view class="form-item half">
+          <text class="item-label required">交货日期</text>
+          <picker mode="date" value="{{deliveryDate}}" bindchange="onDeliveryDateChange">
+            <view class="picker-field">
+              {{deliveryDate || '请选择日期'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">优先级</text>
+        <picker range="{{priorityOptions}}" range-key="label" value="{{priority}}" bindchange="onPriorityChange">
+          <view class="priority-picker">
+            <text class="priority-label">{{currentPriorityLabel}}</text>
+            <view class="priority-indicator" style="background-color: {{currentPriorityColor}}"></view>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="item-label">拼接方式</text>
+        <picker mode="selector" range="{{joinMethodOptions}}" bindchange="onJoinMethodChange">
+          <view class="picker-field">
+            {{joinMethod || '请选择'}}
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 产品信息 -->
+    <view class="form-section">
+      <view class="section-header">
+        <text class="section-title">产品信息</text>
+        <button class="add-btn" bindtap="addProduct">
+          <text class="add-icon">+</text>
+          <text>添加产品</text>
+        </button>
+      </view>
+      
+      <view class="products-list">
+        <view class="product-item" wx:for="{{products}}" wx:key="id">
+          <view class="product-header">
+            <text class="product-index">产品 {{index + 1}}</text>
+            <view class="product-actions">
+              <button class="select-btn" bindtap="selectProduct" data-index="{{index}}">选择产品</button>
+              <button class="delete-btn" bindtap="deleteProduct" data-index="{{index}}" wx:if="{{products.length > 1}}">删除</button>
+            </view>
+          </view>
+          
+          <view class="product-details">
+            <view class="product-name">{{item.productName || '请选择产品'}}</view>
+            
+            <view class="product-specs" wx:if="{{item.specifications}}">
+              <text class="specs-label">规格：</text>
+              <text class="specs-text">{{item.specifications}}</text>
+            </view>
+            
+            <view class="product-form">
+              <view class="form-row">
+                <view class="form-item small">
+                  <text class="item-label">数量</text>
+                  <input class="input-field small" type="number" 
+                         value="{{item.quantity}}" 
+                         bindinput="onQuantityChange" 
+                         data-index="{{index}}"
+                         placeholder="0" />
+                </view>
+                
+                <view class="form-item small">
+                  <text class="item-label">单价</text>
+                  <input class="input-field small" type="digit" 
+                         value="{{item.price}}" 
+                         placeholder="0.00" disabled />
+                </view>
+                
+                <view class="form-item small">
+                  <text class="item-label">小计</text>
+                  <input class="input-field small" type="digit" 
+                         value="{{item.total}}" 
+                         placeholder="0.00" disabled />
+                </view>
+              </view>
+              
+              <view class="form-item">
+                <text class="item-label">规格要求</text>
+                <textarea class="textarea-field" 
+                          value="{{item.specifications}}" 
+                          bindinput="onSpecificationChange" 
+                          data-index="{{index}}"
+                          placeholder="请输入产品规格要求"
+                          maxlength="200"></textarea>
+              </view>
+
+              <view class="form-row">
+                <view class="form-item half">
+                  <text class="item-label">物料号</text>
+                  <input class="input-field" 
+                         value="{{item.materialNo}}" 
+                         placeholder="请输入物料号"
+                         bindinput="onProductChange"
+                         data-index="{{index}}"
+                         data-field="materialNo" />
+                </view>
+                <view class="form-item half">
+                  <text class="item-label">商品名称</text>
+                  <input class="input-field" 
+                         value="{{item.productName}}" 
+                         placeholder="请输入商品名称"
+                         bindinput="onProductChange"
+                         data-index="{{index}}"
+                         data-field="productName" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 价格信息 -->
+    <view class="form-section">
+      <view class="section-title">
+        <text class="title-text">价格信息</text>
+      </view>
+      
+      <view class="price-summary">
+        <view class="price-row">
+          <text class="price-label">小计金额：</text>
+          <text class="price-value">¥{{subtotal}}</text>
+        </view>
+        
+        <view class="price-row">
+          <text class="price-label">优惠折扣：</text>
+          <text class="price-value discount">-¥{{discount}}</text>
+        </view>
+        
+        <view class="price-row">
+          <text class="price-label">税费金额：</text>
+          <text class="price-value tax">¥{{tax}}</text>
+        </view>
+        
+        <view class="price-row total">
+          <text class="price-label total-label">订单总额：</text>
+          <text class="price-value total-amount">¥{{totalAmount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 备注信息 -->
+    <view class="form-section">
+      <view class="section-title">
+        <text class="title-text">备注信息</text>
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">订单备注</text>
+        <textarea class="textarea-field" 
+                  value="{{notes}}" 
+                  bindinput="onNotesChange"
+                  placeholder="请输入订单备注信息"
+                  maxlength="500"></textarea>
+      </view>
+      
+      <view class="form-item">
+        <text class="item-label">特殊要求</text>
+        <textarea class="textarea-field" 
+                  value="{{requirements}}" 
+                  bindinput="onRequirementsChange"
+                  placeholder="请输入特殊要求或说明"
+                  maxlength="500"></textarea>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <view class="action-buttons">
+      <button class="preview-btn" bindtap="previewOrder" disabled="{{submitting}}">
+        <text>预览订单</text>
+      </button>
+      
+      <button class="submit-btn" bindtap="submitOrder" loading="{{submitting}}" disabled="{{submitting}}">
+        <text>{{submitting ? '提交中...' : '创建订单'}}</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 客户选择器 -->
+  <customer-selector show="{{showCustomerSelector}}" 
+                  bind:select="confirmCustomer" 
+                  bind:cancel="cancelCustomerSelect">
+  </customer-selector>
+
+  <!-- 产品选择器 -->
+  <product-selector show="{{showProductSelector}}" 
+                  bind:select="confirmProduct" 
+                  bind:cancel="cancelProductSelect">
+  </product-selector>
+</view>

@@ -1,0 +1,59 @@
+<view class="customer-selector" wx:if="{{show}}">
+  <view class="selector-overlay" bindtap="cancel">
+    <view class="selector-content" catchtap="">
+      <view class="selector-header">
+        <text class="selector-title">选择客户</text>
+        <button class="close-btn" bindtap="cancel">×</button>
+      </view>
+      
+      <!-- 搜索框 -->
+      <view class="search-box">
+        <input class="search-input" 
+               placeholder="搜索客户名称、电话或联系人" 
+               value="{{searchText}}" 
+               bindinput="onSearch" />
+        <text class="search-icon">🔍</text>
+      </view>
+      
+      <!-- 客户列表 -->
+      <view class="customer-list">
+        <!-- 加载状态 -->
+        <view class="loading" wx:if="{{loading}}">
+          <text>加载中...</text>
+        </view>
+        
+        <!-- 空状态 -->
+        <view class="empty" wx:elif="{{filteredCustomers.length === 0 && !loading}}">
+          <text class="empty-text">{{searchText ? '未找到匹配的客户' : '暂无客户数据'}}</text>
+          <text class="empty-tip">请先在客户管理中添加客户</text>
+        </view>
+        
+        <!-- 客户列表 -->
+        <view class="customer-item" 
+              wx:for="{{filteredCustomers}}" 
+              wx:key="{{id}}"
+              bindtap="selectCustomer" 
+              data-customer="{{item}}">
+          
+          <view class="customer-info">
+            <view class="customer-main">
+              <text class="customer-name">{{item.name}}</text>
+              <view class="customer-meta">
+                <text class="customer-contact" wx:if="{{item.contact}}">{{item.contact}}</text>
+                <text class="customer-phone">{{item.phone}}</text>
+              </view>
+            </view>
+            
+            <view class="customer-extra">
+              <text class="customer-address" wx:if="{{item.address}}">{{item.address}}</text>
+              <view class="customer-tags">
+                <text class="customer-tag" wx:if="{{item.level === 'VIP'}}">VIP</text>
+                <text class="customer-tag" wx:if="{{item.isDefault}}">默认</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

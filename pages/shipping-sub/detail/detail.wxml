@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="header">发货详情</view>
+  <view wx:if="{{loading}}" class="loading">加载中</view>
+  <view wx:if="{{!loading}}" class="card">
+    <text>编号：{{item.id}}</text>
+    <text>状态：{{item.status}}</text>
+  </view>
+  <button type="primary" bindtap="onDeliver" class="action">确认送达</button>
+  <button bindtap="onGoTracking" class="secondary">录入物流</button>
+</view>

@@ -1,0 +1,68 @@
+<view class="preview-container">
+  <view class="preview-card" wx:if="{{orderInfo}}">
+    <view class="doc-header">
+      <text class="doc-title">生产施工单</text>
+      <text class="doc-no">NO. {{orderInfo.orderNo || orderInfo._id}}</text>
+    </view>
+    
+    <view class="doc-section">
+      <view class="row">
+        <view class="col">
+          <text class="label">客户名称：</text>
+          <text class="value">{{orderInfo.customer.name || orderInfo.customerName}}</text>
+        </view>
+        <view class="col">
+          <text class="label">交货日期：</text>
+          <text class="value">{{orderInfo.deadline || orderInfo.deliveryDate}}</text>
+        </view>
+      </view>
+      <view class="row">
+        <view class="col">
+          <text class="label">产品名称：</text>
+          <text class="value">{{orderInfo.product.name || orderInfo.productName}}</text>
+        </view>
+         <view class="col">
+          <text class="label">订单数量：</text>
+          <text class="value">{{orderInfo.product.quantity || orderInfo.quantity}} {{orderInfo.product.unit || '件'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="doc-section bordered">
+      <view class="grid-row header">
+        <view class="grid-col">规格</view>
+        <view class="grid-col">材质</view>
+        <view class="grid-col">楞型</view>
+        <view class="grid-col">压线</view>
+      </view>
+      <view class="grid-row">
+        <view class="grid-col">{{orderInfo.product.spec || orderInfo.spec}}</view>
+        <view class="grid-col">{{orderInfo.product.materialCode || orderInfo.materialCode}}</view>
+        <view class="grid-col">{{orderInfo.product.flute || orderInfo.flute}}</view>
+        <view class="grid-col">{{orderInfo.product.creasing || orderInfo.creasingType}}</view>
+      </view>
+    </view>
+
+    <view class="doc-section">
+       <view class="section-title">制作要求</view>
+       <view class="notes">{{orderInfo.notes || '无特殊要求'}}</view>
+    </view>
+    
+     <view class="doc-section">
+       <view class="section-title">生产记录</view>
+       <view class="check-grid">
+         <view class="check-item">领料：________</view>
+         <view class="check-item">印刷：________</view>
+         <view class="check-item">模切：________</view>
+         <view class="check-item">粘箱：________</view>
+         <view class="check-item">打包：________</view>
+         <view class="check-item">质检：________</view>
+       </view>
+    </view>
+
+  </view>
+
+  <view class="footer-bar">
+    <button class="print-btn" bindtap="onPrint">确认打印</button>
+  </view>
+</view>

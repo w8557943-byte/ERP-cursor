@@ -1,0 +1,4279 @@
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Table, Button, Space, Tag, Input, Select, DatePicker, Card, App, Modal, Form, Row, Col, ConfigProvider, Divider, Upload, Image as AntImage } from 'antd'
+import { PlusOutlined, DeleteOutlined, CheckCircleFilled, DownloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { Link, useNavigate } from 'react-router-dom'
+import { orderAPI, customerAPI, supplierAPI, categoryAPI, api } from '../services/api'
+import { matchSizeKeyword } from '../utils'
+import zhCN from 'antd/locale/zh_CN'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+import * as XLSX from 'xlsx'
+
+dayjs.locale('zh-cn')
+
+const { Option } = Select
+const { RangePicker } = DatePicker
+
+function OrderManagement() {
+  const { message } = App.useApp()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [allOrders, setAllOrders] = useState([])
+  const [orders, setOrders] = useState([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailOrder, setDetailOrder] = useState(null)
+  const [form] = Form.useForm()
+  const [customers, setCustomers] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [categories, setCategories] = useState(['纸箱','隔板','天地盒','飞机盒','异性纸盒'])
+  const [creatingSupplier, setCreatingSupplier] = useState(false)
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [creatingFlute, setCreatingFlute] = useState(false)
+  const [supplierHistory, setSupplierHistory] = useState([])
+  const [selectionMode, setSelectionMode] = useState(true)
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importParsing, setImportParsing] = useState(false)
+  const [importSubmitting, setImportSubmitting] = useState(false)
+  const [importRows, setImportRows] = useState([])
+  const [searchParams, setSearchParams] = useState(() => ({
+    keyword: '',
+    quickRange: '',
+    dateRange: []
+  }))
+  const [sortField, setSortField] = useState('')
+  const [sortDir, setSortDir] = useState('desc')
+  const getStickyContainer = useCallback(() => {
+    if (typeof document === 'undefined') return undefined
+    return document.querySelector('.app-content') || document.body
+  }, [])
+
+  const statusMap = {
+    ordered: { text: '已下�?, color: 'purple' },
+    pending: { text: '待生�?, color: 'orange' },
+    processing: { text: '生产�?, color: 'blue' },
+    producing: { text: '生产�?, color: 'blue' },
+    stocked: { text: '已入�?, color: 'geekblue' },
+    shipping: { text: '已发�?, color: 'gold' },
+    completed: { text: '已完�?, color: 'green' },
+    cancelled: { text: '已取�?, color: 'red' }
+  }
+
+  const [stats, setStats] = useState({ total: 0, ordered: 0, pending: 0, processing: 0, stocked: 0 })
+  const [monthOrderCount, setMonthOrderCount] = useState(0)
+
+  const supplierOptions = useMemo(() => {
+    const base = (suppliers || []).map(s => ({ value: s._id || s.id, label: s.name }))
+    const histNames = Array.from(new Set((orders || []).map(o => o.supplierName).filter(n => n && !base.some(b => b.label === n))))
+    const hist = histNames.map(n => ({ value: `name::${n}`, label: n }))
+    return [...base, ...hist, { value: '__NEW__', label: '新增供应�? }]
+  }, [suppliers, orders])
+
+  const customerOptions = useMemo(() => {
+    if ((customers || []).length) {
+      return customers.map(c => ({ value: c._id || c.id, label: c.companyName || c.name || c.company }))
+    }
+    const hist = Array.from(new Set((orders || []).map(o => o.customerName).filter(Boolean)))
+    return hist.map(n => ({ value: `name::${n}`, label: n }))
+  }, [customers, orders])
+
+  const columns = [
+    {
+      title: '订单编号',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
+      width: 90,
+      render: (value, record) => {
+        const id = record._id || record.id || record.key
+        const text = value || record.orderNumber || '-'
+        return id ? <Link to={`/orders/${id}`}>{text}</Link> : text
+      }
+    },
+    {
+      title: '客户',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      width: 120,
+      render: (text, record) => {
+        const customerId = record.customerId || record.customer?._id || record.customer?.id
+        const customerName = text
+        const customer = customers.find(c =>
+          (customerId && (c._id === customerId || c.id === customerId)) ||
+          (c.name === customerName || c.companyName === customerName)
+        )
+        return customer?.shortName || text || '-'
+      }
+    },
+    {
+      title: '产品',
+      key: 'product',
+      width: 180,
+      render: (_, r) => {
+        const w = r.boardWidth; const h = r.boardHeight
+        const sizeText = (w && h) ? `${w}×${h}mm` : ''
+        const rawSpec = r.spec || ''
+        const specText = rawSpec ? (/(mm)$/i.test(rawSpec) ? rawSpec : `${rawSpec}mm`) : ''
+        const productName = r.productName || '-'
+        const c1 = Number(r.creasingSize1 || 0)
+        const c2 = Number(r.creasingSize2 || 0)
+        const c3 = Number(r.creasingSize3 || 0)
+        const type = r.creasingType || ''
+        const creaseText = (c1 || c2 || c3) ? `${c1}-${c2}-${c3}` : (type || '')
+        return (
+          <div>
+            <div style={{ fontWeight: 500 }}>{productName}</div>
+            {specText ? <div>规格：{specText}</div> : null}
+            {sizeText ? <div>{sizeText}</div> : null}
+            {creaseText ? <div style={{ color: '#6b7280' }}>压线：{creaseText}</div> : null}
+          </div>
+        )
+      }
+    },
+    {
+      title: '商品名称',
+      dataIndex: 'goodsName',
+      key: 'goodsName',
+      width: 140,
+      render: (_, r) => {
+        const v = r.goodsName || r.productTitle || (r.items && r.items[0] && (r.items[0].title || r.items[0].productName || r.items[0].goodsName)) || '-'
+        const m = r.materialNo
+        return (
+          <div>
+            <div>{v}</div>
+            {m ? <div style={{ color: '#6b7280' }}>{m}</div> : null}
+          </div>
+        )
+      }
+    },
+    {
+      title: '材质',
+      key: 'material',
+      width: 100,
+      render: (_, r) => (
+        <div>
+          <div>{r.materialCode || '-'}</div>
+          <div style={{ color: '#6b7280' }}>{r.flute || '-'}</div>
+        </div>
+      )
+    },
+
+
+    {
+      title: '数量',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 72
+    },
+    {
+      title: '单价',
+      dataIndex: 'unitPrice',
+      key: 'unitPrice',
+      width: 72
+    },
+    {
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 86,
+      render: (amount) => (amount ?? 0).toLocaleString()
+    },
+    {
+      title: '订单状�?,
+      dataIndex: 'status',
+      key: 'status',
+      width: 84,
+      render: (status, record) => {
+        const showArrived = status === 'ordered' && record?.materialArrived
+        if (showArrived) {
+          return <Tag color="green">已来�?/Tag>
+        }
+        return (
+          <Tag color="green">
+            {statusMap[status]?.text}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: '采购',
+      key: 'materialIn',
+      width: 72,
+      render: (_, record) => {
+        const hasPurchaseOrder = Boolean(record.purchaseOrderNo || record.purchaseOrderId)
+        const poNo = record.purchaseOrderNo ? String(record.purchaseOrderNo) : ''
+        return (
+          <span
+            className={hasPurchaseOrder ? 'material-status material-status--arrived' : 'material-status material-status--pending'}
+            title={hasPurchaseOrder ? (poNo ? `已生成采购单�?{poNo}` : '已生成采购单') : '未生成采购单'}
+          >
+            {hasPurchaseOrder ? (
+              <CheckCircleFilled className="material-status-icon" />
+            ) : (
+              <span className="material-status-circle" />
+            )}
+          </span>
+        )
+      }
+    },
+    {
+      title: '下单时间',
+      key: 'createdAt',
+      width: 110,
+      render: (_, r) => {
+        const t = r.createTime || r.createdAt
+        return t ? dayjs(t).format('YYYY-MM-DD HH:mm') : '-'
+      }
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 60,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined style={{ fontSize: 20 }} />}
+            onClick={() => {
+              const id = record._id || record.id || record.key
+              Modal.confirm({
+                title: '确认删除',
+                content: '删除后不可恢复，是否确认删除该订单？',
+                okText: '删除',
+                okType: 'danger',
+                cancelText: '取消',
+                onOk: () => handleDelete(record)
+              })
+            }}
+          />
+        </Space>
+      )
+    }
+  ]
+
+  const extractList = (res) => {
+    if (Array.isArray(res)) return res
+    if (res && Array.isArray(res.data)) return res.data
+    if (res && res.data && Array.isArray(res.data.orders)) return res.data.orders
+    if (res && res.data && res.data.data && Array.isArray(res.data.data.orders)) return res.data.data.orders
+    return []
+  }
+
+  const extractPagination = (res) => {
+    return res?.pagination || res?.data?.pagination || res?.data?.data?.pagination || {}
+  }
+
+  const fetchAllPages = async (fn, baseParams, options = {}) => {
+    const pageKey = options.pageKey || 'page'
+    const sizeKey = options.sizeKey || 'pageSize'
+    const pageSize = Number(options.pageSize || 200)
+    const maxPages = Number(options.maxPages || 5000)
+    const all = []
+    for (let page = 1; page <= maxPages; page += 1) {
+      const resp = await fn({ ...(baseParams || {}), [pageKey]: page, [sizeKey]: pageSize })
+      const rows = extractList(resp)
+      if (rows.length) all.push(...rows)
+      const pagination = extractPagination(resp)
+      const totalPages = Number(pagination?.totalPages || pagination?.pages || 0)
+      const hasMore = pagination?.hasMore
+      if (totalPages > 0 && page >= totalPages) break
+      if (hasMore === false) break
+      if (!rows.length || rows.length < pageSize) break
+    }
+    return all
+  }
+
+  const normalizeOrders = (data, pageNo) => {
+    const buildQrServerUrl = (payload, size = 220) => {
+      const s = Number(size) || 220
+      return `https://api.qrserver.com/v1/create-qr-code/?size=${s}x${s}&data=${encodeURIComponent(String(payload || ''))}`
+    }
+    const buildOrderQrPayload = ({ orderId, orderNo }) => {
+      return JSON.stringify({ v: 1, orderId: String(orderId || '').trim(), orderNo: String(orderNo || '').trim() })
+    }
+    const normalizeQrUrl = (rawUrl, { orderId, orderNo }) => {
+      const url = String(rawUrl || '').trim()
+      if (url) {
+        const lower = url.toLowerCase()
+        if (lower.includes('api.qrserver.com/v1/create-qr-code')) {
+          const sizeMatch = url.match(/[?&]size=([^&]+)/i)
+          const sizeVal = sizeMatch ? String(sizeMatch[1]) : ''
+          const okSize = /^\d+x\d+$/i.test(sizeVal)
+          const hasData = /[?&]data=/.test(url)
+          if (okSize && hasData) return url
+          return buildQrServerUrl(buildOrderQrPayload({ orderId, orderNo }), 220)
+        }
+        return url
+      }
+      if (!orderId && !orderNo) return ''
+      return buildQrServerUrl(buildOrderQrPayload({ orderId, orderNo }), 220)
+    }
+    const list = (data || []).map((o, idx) => ({
+      ...o,
+      key: o._id ?? o.id ?? `order_${pageNo}_${idx}`,
+      orderNo: o.orderNo ?? o.orderNumber ?? '',
+      customerName: o.customerName ?? o.customer?.name ?? o.customer,
+      productName: o.productName ?? o.product?.name ?? o.product,
+      goodsName: (() => {
+        const items = Array.isArray(o.items) ? o.items : []
+        const first = items[0] || {}
+        return o.goodsName || o.productTitle || first.goodsName || first.title || first.productName || o.goods_name || o.title || '-'
+      })(),
+      orderType: String(o.orderType || '').toLowerCase(),
+      boardWidth: o.boardWidth,
+      boardHeight: o.boardHeight,
+      materialNo: o.materialNo ?? (o.items && o.items[0] && o.items[0].materialNo) ?? undefined,
+      quantity: o.quantity ?? o.totalQty ?? o.items?.reduce((s, it) => s + (it.quantity || 0), 0) ?? 0,
+      unitPrice: o.unitPrice ?? (o.items && o.items[0] && o.items[0].unitPrice) ?? undefined,
+      amount: o.amount ?? o.totalAmount ?? o.finalAmount ?? 0,
+      stockedAtTs: (() => {
+        const t = o.stockedAt || o.warehouseAt || o.updatedAt || null
+        if (!t) return 0
+        try { return dayjs(t).valueOf() } catch { return 0 }
+      })(),
+      status: (() => {
+        const s = String(o.status || '').toLowerCase()
+        if (['ordered'].includes(s)) return 'ordered'
+        if (['pending', 'waiting'].includes(s)) return 'pending'
+        if (['processing', 'in_progress', 'producing'].includes(s)) return 'processing'
+        if (['stocked', 'warehoused'].includes(s)) return 'stocked'
+        if (['shipped', 'shipping', 'delivered'].includes(s)) return 'shipping'
+        if (['completed', 'done'].includes(s)) return 'completed'
+        return 'ordered'
+      })(),
+      priority: o.priority ?? 'normal',
+      createTime: o.createTime ?? o.createdAt ?? null,
+      deliveryDate: o.deliveryDate ?? null,
+      spec: o.spec,
+      materialCode: o.materialCode,
+      flute: o.flute,
+      creasingType: o.creasingType,
+      creasingSize1: o.creasingSize1,
+      creasingSize2: o.creasingSize2,
+      creasingSize3: o.creasingSize3,
+      materialArrived: !!(o.materialArrived || o.material_status === 'arrived'),
+      qrCodeUrl: normalizeQrUrl(o.qrCodeUrl, { orderId: o._id ?? o.id ?? '', orderNo: o.orderNo ?? o.orderNumber ?? '' })
+    }))
+
+    return list.filter(o => String(o.source || '').toLowerCase() !== 'purchased' && o.orderType !== 'purchase')
+  }
+
+  const mergeOrders = (prev, next) => {
+    const map = new Map()
+    for (const o of prev || []) {
+      const k = o._id || o.id || o.key
+      if (k != null) map.set(String(k), o)
+    }
+    for (const o of next || []) {
+      const k = o._id || o.id || o.key
+      if (k != null) map.set(String(k), o)
+    }
+    return Array.from(map.values())
+  }
+
+  const applySearch = useCallback((params) => {
+    const kw = String(params.keyword || '').toLowerCase().trim()
+    let data = [...allOrders]
+    if (kw) {
+      data = data.filter(o => {
+        const sizeMatch = matchSizeKeyword(
+          params.keyword,
+          { a: o.boardWidth, b: o.boardHeight },
+          o.spec,
+          o.materialNo
+        )
+        const f = [
+          o.orderNo,
+          o.orderNumber,
+          o.order_id,
+          o.customerName,
+          o.customer?.name,
+          o.productName,
+          o.product?.name,
+          o.goodsName,
+          o.spec,
+          o.boardWidth,
+          o.boardHeight,
+          o.materialNo,
+          o.creasingType,
+          o.creasingSize1,
+          o.creasingSize2,
+          o.creasingSize3
+        ]
+        return sizeMatch || f.some(v => v && String(v).toLowerCase().includes(kw))
+      })
+    }
+    const [start, end] = params.dateRange || []
+    if (start && end) {
+      data = data.filter(o => {
+        const t = o.createTime || o.createdAt
+        if (!t) return false
+        const d = dayjs(t)
+        return d.isAfter(dayjs(start).startOf('day')) && d.isBefore(dayjs(end).endOf('day'))
+      })
+    }
+    const keyGetter = (o) => {
+      if (sortField === 'time') return Number(o.stockedAtTs || 0)
+      if (sortField === 'qty') return Number(o.quantity || 0)
+      if (sortField === 'amount') return Number(o.amount || 0)
+      return 0
+    }
+    data = data.slice().sort((a, b) => {
+      const av = keyGetter(a)
+      const bv = keyGetter(b)
+      return sortDir === 'desc' ? (bv - av) : (av - bv)
+    })
+    setOrders(data)
+  }, [allOrders, sortDir, sortField])
+
+  useEffect(() => {
+    applySearch(searchParams)
+  }, [applySearch, searchParams])
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true)
+    try {
+      const all = await fetchAllPages(
+        orderAPI.getOrders,
+        {
+          orderBy: 'createdAt_desc',
+          excludeOrderType: 'purchase'
+        },
+        { pageSize: 200, maxPages: 5000 }
+      )
+
+      const normalized = normalizeOrders(all, 1)
+      setAllOrders(normalized)
+
+      const monthStart = dayjs().startOf('month')
+      const monthEnd = dayjs().endOf('month')
+      const monthCount = normalized.filter(o => {
+        const t = o.createTime || o.createdAt
+        if (!t) return false
+        const d = dayjs(t)
+        return d.isAfter(monthStart.subtract(1, 'millisecond')) && d.isBefore(monthEnd.add(1, 'millisecond'))
+      }).length
+      setMonthOrderCount(monthCount)
+
+      const ordered = normalized.filter(o => o.status === 'ordered').length
+      const pending = normalized.filter(o => o.status === 'pending').length
+      const processing = normalized.filter(o => o.status === 'processing' || o.status === 'producing').length
+      const stocked = normalized.filter(o => o.status === 'stocked').length
+      const total = normalized.length
+      setStats({ total, ordered, pending, processing, stocked })
+    } catch (e) {
+      message.error('加载订单失败')
+      setAllOrders([])
+      setOrders([])
+      setStats({ total: 0, ordered: 0, pending: 0, processing: 0, stocked: 0 })
+      setMonthOrderCount(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [message])
+
+
+
+  const handleSearch = () => {
+    applySearch(searchParams)
+  }
+
+  const handleExport = () => {
+    try {
+      const getCustomerShortName = (order) => {
+        const customerId = order.customerId || order.customer?._id || order.customer?.id
+        const customerName = order.customerName
+        const customer = customers.find(c =>
+          (customerId && (c._id === customerId || c.id === customerId)) ||
+          (c.name === customerName || c.companyName === customerName)
+        )
+        return customer?.shortName || customerName || ''
+      }
+
+      const getSupplierShortName = (order) => {
+        const supplierId = order.supplierId || order.supplier?._id || order.supplier?.id
+        const supplierName = order.supplierName
+        const supplier = suppliers.find(s =>
+          (supplierId && (s._id === supplierId || s.id === supplierId)) ||
+          (s.name === supplierName || s.companyName === supplierName)
+        )
+        return supplier?.shortName || supplierName || ''
+      }
+
+      const getGoodsName = (order) => {
+        return (
+          order.goodsName ||
+          order.productTitle ||
+          (order.items && order.items[0] && (order.items[0].title || order.items[0].productName || order.items[0].goodsName)) ||
+          ''
+        )
+      }
+
+      const parseSpecDims = (order) => {
+        const raw = String(order?.spec || '').trim()
+        if (!raw) return { specL: '', specW: '', specH: '' }
+        const cleaned = raw.replace(/mm/gi, '').trim()
+        const parts = cleaned.split(/[×xX*]/).map(s => s.trim()).filter(Boolean)
+        const nums = parts.map(p => Number(String(p).replace(/[^\d.]/g, ''))).filter(n => Number.isFinite(n))
+        return {
+          specL: nums[0] ?? '',
+          specW: nums[1] ?? '',
+          specH: nums[2] ?? ''
+        }
+      }
+
+      const getMaterialNo = (order) => {
+        return (
+          order.materialNo ||
+          (order.items && order.items[0] && (order.items[0].materialNo || order.items[0].material_no)) ||
+          ''
+        )
+      }
+
+      const header1 = [
+        '客名（简称）',
+        '产品类别',
+        '商品名称',
+        '物料�?,
+        '规格尺寸（mm�?,
+        '',
+        '',
+        '材质编码',
+        '楞别',
+        '纸板尺寸（mm�?,
+        '',
+        '压线尺寸（mm�?,
+        '',
+        '',
+        '压线类型',
+        '下单片数',
+        '数量',
+        '单位',
+        '供应商（简称）',
+        '拼接方式',
+        '单价',
+        '金额',
+        '备注'
+      ]
+      const header2 = [
+        '',
+        '',
+        '',
+        '',
+        '�?,
+        '�?,
+        '�?,
+        '',
+        '',
+        '宽（门幅�?,
+        '长度',
+        '压线1',
+        '压线2',
+        '压线3',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
+      ]
+
+      const keyOf = (r) => r?._id || r?.id || r?.key
+      const selectedSet = new Set((selectedRowKeys || []).map(String))
+      const sourceOrders = selectedSet.size
+        ? (orders || []).filter((r) => selectedSet.has(String(keyOf(r))))
+        : (orders || [])
+      const rows = sourceOrders.map(o => {
+        const { specL, specW, specH } = parseSpecDims(o)
+        const sheetCount = o.sheetCount ?? o.totalQty ?? ''
+        const quantity = o.quantity ?? ''
+        const unit = o.unit ?? ''
+        const supplierShortName = getSupplierShortName(o)
+        const joinMethod = o.joinMethod ?? ''
+        const unitPrice = o.unitPrice ?? o.price ?? ''
+        const amount = o.amount ?? o.totalAmount ?? ''
+        return [
+          getCustomerShortName(o),
+          o.productName || '',
+          getGoodsName(o),
+          getMaterialNo(o),
+          specL,
+          specW,
+          specH,
+          o.materialCode || '',
+          o.flute || '',
+          o.boardWidth ?? '',
+          o.boardHeight ?? '',
+          o.creasingSize1 ?? '',
+          o.creasingSize2 ?? '',
+          o.creasingSize3 ?? '',
+          o.creasingType || '',
+          sheetCount,
+          quantity,
+          unit,
+          supplierShortName,
+          joinMethod,
+          unitPrice,
+          amount,
+          o.notes || ''
+        ]
+      })
+
+      const ws = XLSX.utils.aoa_to_sheet([header1, header2, ...rows])
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
+        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+        { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
+        { s: { r: 0, c: 7 }, e: { r: 1, c: 7 } },
+        { s: { r: 0, c: 8 }, e: { r: 1, c: 8 } },
+        { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } },
+        { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } },
+        { s: { r: 0, c: 14 }, e: { r: 1, c: 14 } },
+        { s: { r: 0, c: 15 }, e: { r: 1, c: 15 } },
+        { s: { r: 0, c: 16 }, e: { r: 1, c: 16 } },
+        { s: { r: 0, c: 17 }, e: { r: 1, c: 17 } },
+        { s: { r: 0, c: 18 }, e: { r: 1, c: 18 } },
+        { s: { r: 0, c: 19 }, e: { r: 1, c: 19 } },
+        { s: { r: 0, c: 20 }, e: { r: 1, c: 20 } },
+        { s: { r: 0, c: 21 }, e: { r: 1, c: 21 } },
+        { s: { r: 0, c: 22 }, e: { r: 1, c: 22 } }
+      ]
+      ws['!cols'] = [
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 16 }
+      ]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, "订单列表")
+
+      XLSX.writeFile(wb, `订单导出_${dayjs().format('YYYYMMDDHHmm')}.xlsx`)
+      message.success('导出成功')
+    } catch (e) {
+      console.error(e)
+      message.error('导出失败')
+    }
+  }
+
+  const normalizeHeaderKey = (k) => String(k || '').trim()
+
+  const parseReadableNumber = (v) => {
+    if (v === undefined || v === null) return NaN
+    if (typeof v === 'number') return v
+    const s = String(v).trim()
+    if (!s) return NaN
+    const cleaned = s.replace(/[,，\s]/g, '')
+    const n = Number(cleaned)
+    return Number.isFinite(n) ? n : NaN
+  }
+
+  const parseBoardSizeText = (v) => {
+    const s = String(v || '').trim()
+    if (!s) return {}
+    const cleaned = s.replace(/mm$/i, '').trim()
+    const parts = cleaned.split(/[×xX*]/).map(p => p.trim()).filter(Boolean)
+    const w = parseReadableNumber(parts[0])
+    const h = parseReadableNumber(parts[1])
+    return {
+      boardWidth: Number.isFinite(w) ? w : undefined,
+      boardHeight: Number.isFinite(h) ? h : undefined
+    }
+  }
+
+  const parseCreaseText = (v) => {
+    const s = String(v || '').trim()
+    if (!s) return {}
+    const parts = s.split(/[-—–]/).map(p => p.trim()).filter(Boolean)
+    const c1 = parseReadableNumber(parts[0])
+    const c2 = parseReadableNumber(parts[1])
+    const c3 = parseReadableNumber(parts[2])
+    return {
+      creasingSize1: Number.isFinite(c1) ? c1 : undefined,
+      creasingSize2: Number.isFinite(c2) ? c2 : undefined,
+      creasingSize3: Number.isFinite(c3) ? c3 : undefined
+    }
+  }
+
+  const normalizeImportRow = (raw, idx) => {
+    const normalized = {}
+    Object.entries(raw || {}).forEach(([k, v]) => {
+      const nk = normalizeHeaderKey(k)
+      if (!nk) return
+      normalized[nk] = v
+    })
+
+    const pick = (...keys) => {
+      for (const k of keys) {
+        const nk = normalizeHeaderKey(k)
+        if (Object.prototype.hasOwnProperty.call(normalized, nk)) return normalized[nk]
+      }
+      return undefined
+    }
+
+    const customerText = String(pick('客名（简称）', '客户', '客户名称', '客名', '客名(简�?', '客名（简�?) || '').trim()
+    const productName = String(pick('产品类别', '产品', '产品名称') || '').trim()
+    const goodsName = String(pick('商品名称', '品名', '商品', '产品标题') || '').trim()
+    const materialNo = String(pick('物料�?, '物料编号', '物料') || '').trim()
+    const specRaw = String(pick('规格尺寸（mm�?, '规格尺寸', '规格', '尺寸') || '').trim()
+    const spec = specRaw ? (/(mm)$/i.test(specRaw) ? specRaw : `${specRaw}mm`) : ''
+    const materialCode = String(pick('材质编码', '材质', '材质代码') || '').trim()
+    const flute = String(pick('楞别', '楞型') || '').trim()
+    const paperSize = pick('纸板尺寸（mm�?, '纸板尺寸', '纸板', '纸板规格')
+    const creaseSize = pick('压线尺寸（mm�?, '压线尺寸', '压线')
+    const creasingType = String(pick('压线类型', '压线方式') || '').trim()
+    const supplierShortName = String(pick('供应商（简称）', '供应商简�?, '供应�?简�?', '供应商（简�?, '供应商简') || '').trim()
+    const joinMethod = String(pick('拼接方式', '拼接') || '').trim()
+    const notes = String(pick('备注', '说明') || '').trim()
+
+    const sheetCountRaw = pick('下单片数', '片数', '下单片数(�?', '下单片数（片�?)
+    const sheetCountN = parseReadableNumber(sheetCountRaw)
+    const sheetCount = Number.isFinite(sheetCountN) ? Math.round(sheetCountN) : NaN
+    const quantityRaw = pick('数量', '下单数量')
+    const quantityN = parseReadableNumber(quantityRaw)
+    const quantity = Number.isFinite(quantityN) ? Math.round(quantityN) : NaN
+    const unit = String(pick('单位') || '').trim() || undefined
+
+    const unitPriceRaw = pick('单价', '含税单价', '价格')
+    const amountRaw = pick('金额', '订单金额', '总金�?, '合计')
+    const unitPriceN = parseReadableNumber(unitPriceRaw)
+    const amountN = parseReadableNumber(amountRaw)
+
+    let unitPrice = Number.isFinite(unitPriceN) ? unitPriceN : NaN
+    let amount = Number.isFinite(amountN) ? amountN : NaN
+    if (!Number.isFinite(amount) && Number.isFinite(sheetCount) && Number.isFinite(unitPrice)) {
+      amount = Number(sheetCount) * Number(unitPrice)
+    }
+    if (!Number.isFinite(amount) && Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      amount = Number(quantity) * Number(unitPrice)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(sheetCount) && Number.isFinite(amount) && Number(sheetCount) !== 0) {
+      unitPrice = Number(amount) / Number(sheetCount)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(quantity) && Number.isFinite(amount) && Number(quantity) !== 0) {
+      unitPrice = Number(amount) / Number(quantity)
+    }
+
+    const customer = (customers || []).find(c => {
+      const shortName = String(c?.shortName || '').trim()
+      const name = String(c?.name || '').trim()
+      const companyName = String(c?.companyName || '').trim()
+      return (
+        (shortName && shortName === customerText) ||
+        (name && name === customerText) ||
+        (companyName && companyName === customerText)
+      )
+    })
+
+    const mappedCustomerId = customer ? (customer._id || customer.id) : undefined
+    const customerId = mappedCustomerId || customerText || undefined
+    const customerName = customer ? (customer.companyName || customer.name || customerText) : customerText
+
+    const size = parseBoardSizeText(paperSize)
+    const crease = parseCreaseText(creaseSize)
+
+    const errors = []
+    if (!customerText) errors.push('缺少客户')
+    if (!productName) errors.push('缺少产品类别')
+    if (!supplierShortName) errors.push('缺少供应商（简称）')
+    if (joinMethod && !['打钉', '粘胶'].includes(joinMethod)) errors.push('拼接方式仅支持：打钉/粘胶')
+    if ((!Number.isFinite(sheetCount) || sheetCount <= 0) && (!Number.isFinite(quantity) || quantity <= 0)) {
+      errors.push('缺少下单片数/数量')
+    }
+    if (!Number.isFinite(amount) || amount <= 0) errors.push('缺少金额/单价')
+
+    return {
+      key: `import_${idx}`,
+      rowIndex: idx + 2,
+      customerText,
+      customerId,
+      customerName,
+      productName,
+      goodsName,
+      materialNo,
+      spec,
+      materialCode,
+      flute,
+      ...size,
+      creasingType,
+      ...crease,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : (Number.isFinite(sheetCount) ? sheetCount : undefined),
+      unit,
+      supplierShortName,
+      joinMethod: joinMethod || undefined,
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : undefined,
+      amount: Number.isFinite(amount) ? amount : undefined,
+      sheetCount: Number.isFinite(sheetCount) ? sheetCount : undefined,
+      notes,
+      errors,
+      status: errors.length ? 'invalid' : 'valid'
+    }
+  }
+
+  const normalizeTemplateRow = (row, excelRowIndex) => {
+    const getText = (i) => String(row?.[i] ?? '').trim()
+    const getNum = (i) => {
+      const n = parseReadableNumber(row?.[i])
+      return Number.isFinite(n) ? n : undefined
+    }
+
+    const customerText = getText(0)
+    const productName = getText(1)
+    const goodsName = getText(2)
+    const materialNo = getText(3)
+    const specL = getNum(4)
+    const specW = getNum(5)
+    const specH = getNum(6)
+    const materialCode = getText(7)
+    const flute = getText(8)
+    const boardWidth = getNum(9)
+    const boardHeight = getNum(10)
+    const creasingSize1 = getNum(11)
+    const creasingSize2 = getNum(12)
+    const creasingSize3 = getNum(13)
+    const creasingType = getText(14)
+    const sheetCountN = parseReadableNumber(row?.[15])
+    const sheetCount = Number.isFinite(sheetCountN) ? Math.round(sheetCountN) : undefined
+    const quantityN = parseReadableNumber(row?.[16])
+    const quantity = Number.isFinite(quantityN) ? Math.round(quantityN) : undefined
+    const unit = getText(17) || undefined
+    const supplierShortName = getText(18)
+    const joinMethod = getText(19)
+    const unitPriceN = parseReadableNumber(row?.[20])
+    const amountN = parseReadableNumber(row?.[21])
+    const notes = getText(22)
+
+    let amount = Number.isFinite(amountN) ? amountN : NaN
+    let unitPrice = Number.isFinite(unitPriceN) ? unitPriceN : NaN
+    if (!Number.isFinite(amount) && Number.isFinite(sheetCount) && Number.isFinite(unitPrice)) {
+      amount = Number(sheetCount) * Number(unitPrice)
+    }
+    if (!Number.isFinite(amount) && Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      amount = Number(quantity) * Number(unitPrice)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(sheetCount) && Number.isFinite(amount) && Number(sheetCount) !== 0) {
+      unitPrice = Number(amount) / Number(sheetCount)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(quantity) && Number.isFinite(amount) && Number(quantity) !== 0) {
+      unitPrice = Number(amount) / Number(quantity)
+    }
+
+    const customer = (customers || []).find(c => {
+      const shortName = String(c?.shortName || '').trim()
+      const name = String(c?.name || '').trim()
+      const companyName = String(c?.companyName || '').trim()
+      return (
+        (shortName && shortName === customerText) ||
+        (name && name === customerText) ||
+        (companyName && companyName === customerText)
+      )
+    })
+    const mappedCustomerId = customer ? (customer._id || customer.id) : undefined
+    const customerId = mappedCustomerId || customerText || undefined
+    const customerName = customer ? (customer.companyName || customer.name || customerText) : customerText
+
+    const specParts = [specL, specW, specH].filter(v => v !== undefined && v !== '')
+    const spec = specParts.length ? `${specParts.join('×')}mm` : ''
+
+    const errors = []
+    if (!customerText) errors.push('缺少客户')
+    if (!productName) errors.push('缺少产品类别')
+    if (!Number.isFinite(sheetCount) || sheetCount <= 0) errors.push('缺少下单片数')
+    if (!supplierShortName) errors.push('缺少供应商（简称）')
+    if (joinMethod && !['打钉', '粘胶'].includes(joinMethod)) errors.push('拼接方式仅支持：打钉/粘胶')
+    if (!Number.isFinite(amount) || amount <= 0) errors.push('缺少金额/单价')
+
+    return {
+      key: `import_${excelRowIndex}`,
+      rowIndex: excelRowIndex,
+      customerText,
+      customerId,
+      customerName,
+      productName,
+      goodsName,
+      materialNo,
+      spec,
+      materialCode,
+      flute,
+      boardWidth,
+      boardHeight,
+      creasingType,
+      creasingSize1,
+      creasingSize2,
+      creasingSize3,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : sheetCount,
+      unit,
+      supplierShortName,
+      joinMethod: joinMethod || undefined,
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : undefined,
+      amount: Number.isFinite(amount) ? amount : undefined,
+      sheetCount,
+      notes,
+      errors,
+      status: errors.length ? 'invalid' : 'valid'
+    }
+  }
+
+  const readExcelAsRows = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('读取文件失败'))
+      reader.onload = () => {
+        try {
+          const buf = reader.result
+          const wb = XLSX.read(buf, { type: 'array' })
+          const firstName = (wb.SheetNames || [])[0]
+          if (!firstName) throw new Error('未找到工作表')
+          const ws = wb.Sheets[firstName]
+          const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+          const headerRowIdx = (aoa || []).findIndex((r) => {
+            const a = String(r?.[0] ?? '').trim()
+            const b = String(r?.[1] ?? '').trim()
+            const c = String(r?.[2] ?? '').trim()
+            return a.includes('客名') && b.includes('产品') && c.includes('商品')
+          })
+          const subHeaderRow = headerRowIdx >= 0 ? (aoa?.[headerRowIdx + 1] || []) : []
+          const isTemplate =
+            headerRowIdx >= 0 &&
+            String(subHeaderRow?.[4] ?? '').trim() === '�? &&
+            String(subHeaderRow?.[5] ?? '').trim() === '�? &&
+            String(subHeaderRow?.[6] ?? '').trim() === '�?
+          if (isTemplate) {
+            resolve({ sheetName: firstName, mode: 'template', headerRowIdx, rows: aoa })
+            return
+          }
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+          resolve({ sheetName: firstName, mode: 'json', rows })
+        } catch (e) {
+          reject(e)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  const handleImportFile = async (file) => {
+    setImportParsing(true)
+    setImportFileName(file?.name || '')
+    try {
+      const parsed = await readExcelAsRows(file)
+      const mode = parsed?.mode || 'json'
+      const normalized = (() => {
+        if (mode === 'template') {
+          const aoa = Array.isArray(parsed?.rows) ? parsed.rows : []
+          const headerRowIdx = Number(parsed?.headerRowIdx ?? -1)
+          const dataStart = headerRowIdx >= 0 ? headerRowIdx + 2 : 2
+          return aoa
+            .slice(dataStart)
+            .map((r, idx) => ({ r, excelRow: dataStart + idx + 1 }))
+            .filter(({ r }) => Array.isArray(r) && r.some(v => String(v ?? '').trim() !== ''))
+            .map(({ r, excelRow }) => normalizeTemplateRow(r, excelRow))
+            .filter(r => r.customerText || r.productName || Number.isFinite(r.quantity) || r.goodsName || r.spec)
+        }
+        const rows = Array.isArray(parsed?.rows) ? parsed.rows : []
+        return rows
+          .map((r, idx) => normalizeImportRow(r, idx))
+          .filter(r => r.customerText || r.productName || Number.isFinite(r.quantity) || r.goodsName || r.spec)
+      })()
+      if (!normalized.length) {
+        message.error('未识别到可导入的数据')
+        setImportOpen(false)
+        setImportRows([])
+        return false
+      }
+      setImportRows(normalized)
+      setImportOpen(true)
+      return false
+    } catch (e) {
+      message.error(e?.message || '解析Excel失败')
+      setImportOpen(false)
+      setImportRows([])
+      return false
+    } finally {
+      setImportParsing(false)
+    }
+  }
+
+  const importPreviewColumns = useMemo(() => ([
+    { title: '�?, dataIndex: 'rowIndex', key: 'rowIndex', width: 70 },
+    { title: '客户', dataIndex: 'customerName', key: 'customerName', width: 140, ellipsis: true },
+    { title: '产品类别', dataIndex: 'productName', key: 'productName', width: 140, ellipsis: true },
+    { title: '商品名称', dataIndex: 'goodsName', key: 'goodsName', width: 160, ellipsis: true },
+    { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 90 },
+    { title: '供应商（简称）', dataIndex: 'supplierShortName', key: 'supplierShortName', width: 140, ellipsis: true },
+    { title: '拼接方式', dataIndex: 'joinMethod', key: 'joinMethod', width: 110 },
+    {
+      title: '单价',
+      dataIndex: 'unitPrice',
+      key: 'unitPrice',
+      width: 100,
+      render: (v) => (v === undefined || v === null || v === '') ? '' : Number(v).toFixed(4).replace(/\.?0+$/, '')
+    },
+    {
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 110,
+      render: (v) => (v === undefined || v === null || v === '') ? '' : Number(v).toFixed(2).replace(/\.00$/, '')
+    },
+    {
+      title: '结果',
+      key: 'status',
+      width: 120,
+      render: (_, r) => {
+        if (r.status === 'success') return <Tag color="green">已导�?/Tag>
+        if (r.status === 'failed') return <Tag color="red">失败</Tag>
+        if (r.status === 'invalid') return <Tag color="red">不可导入</Tag>
+        return <Tag color="blue">可导�?/Tag>
+      }
+    },
+    {
+      title: '错误信息',
+      key: 'errors',
+      width: 240,
+      render: (_, r) => {
+        const msgs = Array.isArray(r.errors) ? r.errors : []
+        const err = r.importError ? [r.importError, ...msgs] : msgs
+        return err.length ? err.join('�?) : ''
+      }
+    }
+  ]), [importRows])
+
+  const buildCreatePayload = (r) => {
+    const baseURL = String(api?.defaults?.baseURL || '')
+    const isCloudBridge = baseURL.includes('api-bridge')
+    const supplierText = String(r.supplierShortName || '').trim()
+    const supplier = supplierText ? (suppliers || []).find(s => {
+      const shortName = String(s?.shortName || '').trim()
+      const name = String(s?.name || '').trim()
+      const companyName = String(s?.companyName || '').trim()
+      return (
+        (shortName && shortName === supplierText) ||
+        (name && name === supplierText) ||
+        (companyName && companyName === supplierText)
+      )
+    }) : undefined
+    let payload = {
+      customerName: r.customerName,
+      supplierId: supplier ? (supplier._id || supplier.id) : undefined,
+      supplierName: supplier ? (supplier.name || supplier.companyName || supplierText) : supplierText || undefined,
+      productName: r.productName,
+      productTitle: r.goodsName || undefined,
+      goodsName: r.goodsName || undefined,
+      quantity: r.quantity,
+      unit: r.unit || '�?,
+      unitPrice: r.unitPrice,
+      amount: r.amount,
+      totalAmount: r.amount,
+      createdAt: Date.now(),
+      deliveryDate: null,
+      priority: 'normal',
+      boardWidth: r.boardWidth,
+      boardHeight: r.boardHeight,
+      creasingType: r.creasingType,
+      creasingSize1: r.creasingSize1,
+      creasingSize2: r.creasingSize2,
+      creasingSize3: r.creasingSize3,
+      spec: r.spec,
+      flute: r.flute,
+      materialCode: r.materialCode,
+      materialNo: r.materialNo,
+      sheetCount: r.sheetCount,
+      joinMethod: r.joinMethod,
+      notes: r.notes,
+      orderType: 'production'
+    }
+    if (isCloudBridge) {
+      payload = {
+        ...payload,
+        customerId: r.customerId || r.customerName || 'PC',
+        items: [{
+          name: r.productName,
+          quantity: Number(r.quantity || 0),
+          unit: r.unit || '�?,
+          unitPrice: Number(r.unitPrice || 0),
+          spec: r.spec,
+          materialCode: r.materialCode,
+          materialNo: r.materialNo,
+          flute: r.flute,
+          boardWidth: r.boardWidth,
+          boardHeight: r.boardHeight,
+          creasingType: r.creasingType,
+          creasingSize1: r.creasingSize1,
+          creasingSize2: r.creasingSize2,
+          creasingSize3: r.creasingSize3,
+          sheetCount: r.sheetCount
+        }]
+      }
+    }
+    return payload
+  }
+
+  const openBoardPurchasePreview = () => {
+    const keyOf = (r) => r._id || r.id || r.key
+    const selected = (orders || []).filter(r => selectedRowKeys.includes(keyOf(r)))
+    if (!selected.length) {
+      message.warning('请先勾选订�?)
+      return
+    }
+    navigate('/purchase/boards/preview', { state: { rows: selected } })
+  }
+
+  useEffect(() => {
+    loadOrders()
+    loadMeta()
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('supplierHistory') || '[]')
+      setSupplierHistory(Array.isArray(saved) ? saved : [])
+    } catch (e) { void 0 }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem('editOrderId')
+      if (id) {
+        sessionStorage.removeItem('editOrderId')
+        navigate(`/orders/edit/${id}`)
+      }
+    } catch (e) { void 0 }
+  }, [orders])
+
+  const openCreateModal = () => {
+    setEditingOrder(null)
+    setModalOpen(true)
+    form.resetFields()
+    form.setFieldsValue({ creasingType: undefined, boardWidth: undefined, creasingSize1: undefined, creasingSize2: undefined, creasingSize3: undefined })
+    const init = async () => {
+      try {
+        const res = await orderAPI.getNextOrderNumber()
+        const no = res?.data?.data?.orderNumber
+        if (no) {
+          form.setFieldsValue({
+            orderNo: no,
+            deliveryDate: dayjs().add(3, 'day')
+          })
+          return
+        }
+      } catch (e) { /* ignore */ }
+      form.setFieldsValue({ orderNo: undefined, qrCodeUrl: undefined, deliveryDate: dayjs().add(3, 'day') })
+    }
+    init()
+  }
+
+  const openEditModal = (record) => {
+    setEditingOrder(record)
+    setModalOpen(true)
+    const matchedSupplier = (suppliers || []).find(s => s.name === record.supplierName || s.companyName === record.supplierName)
+    form.setFieldsValue({
+      orderNo: record.orderNo || record.orderNumber,
+      customerName: record.customerName,
+      productName: record.productName,
+      productTitle: record.productTitle,
+      spec: record.spec,
+      flute: record.flute,
+      materialCode: record.materialCode,
+      materialNo: record.materialNo,
+      joinMethod: record.joinMethod,
+      quantity: record.quantity,
+      unitPrice: record.unitPrice,
+      amount: record.amount,
+      deposit: record.deposit,
+      balance: Math.max(0, (record.amount || 0) - (record.deposit || 0)),
+      priority: record.priority || 'normal',
+      deliveryDate: record.deliveryDate ? (dayjs.isDayjs(record.deliveryDate) ? record.deliveryDate : dayjs(record.deliveryDate)) : null,
+      notes: record.notes,
+      supplierId: record.supplierId || matchedSupplier?._id || matchedSupplier?.id,
+      supplierName: record.supplierName,
+      qrCodeUrl: record.qrCodeUrl
+    })
+    const files = Array.isArray(record.attachments) ? record.attachments.map((a, i) => {
+      if (typeof a === 'string') return { uid: String(i), name: a, url: a }
+      return { uid: a.fileID || String(i), name: a.name || `附件${i + 1}`, url: a.url }
+    }) : []
+    form.setFieldsValue({ attachments: files })
+    const specParts = String(record.spec || '')
+      .replace(/mm/gi, '')
+      .split(/[×xX*]/)
+      .map(s => String(s || '').trim())
+      .filter(Boolean)
+      .map(s => {
+        const v = s.replace(/[^\d.]/g, '')
+        return v || undefined
+      })
+      .filter(v => v !== undefined)
+    form.setFieldsValue({ spec1: specParts[0], spec2: specParts[1], spec3: specParts[2] })
+  }
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields()
+      const compressImageFile = (file) => new Promise((resolve) => {
+        try {
+          if (!file.originFileObj || file.url) return resolve(file)
+          const reader = new FileReader()
+          reader.onload = (ev) => {
+            const img = new Image()
+            img.onload = () => {
+              const maxW = 1200
+              const scale = Math.min(1, maxW / img.width)
+              const w = Math.round(img.width * scale)
+              const h = Math.round(img.height * scale)
+              const canvas = document.createElement('canvas')
+              canvas.width = w
+              canvas.height = h
+              const ctx = canvas.getContext('2d')
+              ctx.drawImage(img, 0, 0, w, h)
+              try {
+                file.url = canvas.toDataURL('image/jpeg', 0.7)
+              } catch (e) {
+                file.url = ev.target.result
+              }
+              resolve(file)
+            }
+            img.src = ev.target.result
+          }
+          reader.readAsDataURL(file.originFileObj)
+        } catch (e) {
+          resolve(file)
+        }
+      })
+      const ensureAttachmentUrls = async (files = []) => {
+        const pending = (files || []).filter(f => f.originFileObj && !f.url)
+        if (!pending.length) return files
+        await Promise.all(pending.map(compressImageFile))
+        form.setFieldsValue({ attachments: [...files] })
+        return files
+      }
+      await ensureAttachmentUrls(values.attachments || [])
+      const selectedCustomer = (customers || []).find(c => (c._id || c.id) === values.customerId)
+      const selectedSupplier = (suppliers || []).find(s => (s._id || s.id) === values.supplierId)
+      const safeAttachments = (values.attachments || [])
+        .map(f => {
+          const name = f.name || '附件'
+          const url = f.url || (f.response && f.response.url) || undefined
+          return url ? { name, url } : name
+        })
+      const payload = {
+        orderNo: values.orderNo,
+        customerId: values.customerId || (values.customerName ? `name::${values.customerName}` : undefined),
+        customerName: values.customerName || selectedCustomer?.companyName || selectedCustomer?.name,
+        productName: values.productName,
+        productTitle: values.productTitle,
+        supplierId: values.supplierId,
+        supplierName: values.supplierName || selectedSupplier?.name,
+        quantity: values.quantity,
+        unitPrice: values.unitPrice,
+        amount: values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0)),
+        deposit: values.deposit || 0,
+        balance: (values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0))) - Number(values.deposit || 0),
+        items: [{ name: values.productName, quantity: Number(values.quantity || 0), unitPrice: Number(values.unitPrice || 0), spec: values.spec }],
+        totalAmount: values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0)),
+        createdAt: Date.now(),
+        deliveryDate: values.deliveryDate ? (values.deliveryDate.format ? values.deliveryDate.format('YYYY-MM-DD') : values.deliveryDate) : null,
+        priority: values.priority || 'normal',
+        boardWidth: values.boardWidth,
+        boardHeight: values.boardHeight,
+        creasingType: values.creasingType,
+        creasingSize1: values.creasingSize1,
+        creasingSize2: values.creasingSize2,
+        creasingSize3: values.creasingSize3,
+        spec: values.spec,
+        flute: values.flute,
+        materialCode: values.materialCode,
+        materialNo: values.materialNo,
+        joinMethod: values.joinMethod,
+        notes: values.notes,
+        attachments: safeAttachments,
+        qrCodeUrl: values.qrCodeUrl,
+        orderType: 'production'
+      }
+      if (editingOrder && (editingOrder._id || editingOrder.id || editingOrder.key)) {
+        const id = editingOrder._id || editingOrder.id || editingOrder.key
+        await orderAPI.updateOrder(id, payload)
+        message.success('订单已更�?)
+      } else {
+        const res = await orderAPI.createOrder({ ...payload, status: 'ordered' })
+        const orderNo = res?.data?.order?.orderNo || res?.data?.orderNo || res?.data?.orderNumber
+        message.success(orderNo ? `订单已创建（编号�?{orderNo}）` : '订单已创�?)
+        try {
+          const name = payload.supplierName
+          if (name) {
+            const next = Array.from(new Set([name, ...supplierHistory])).slice(0, 20)
+            setSupplierHistory(next)
+            localStorage.setItem('supplierHistory', JSON.stringify(next))
+          }
+        } catch (e) { void 0 }
+        try {
+          const memKey = (payload.spec && String(payload.spec).trim()) || [String(payload.boardWidth || ''), String(payload.boardHeight || '')].filter(Boolean).join('×')
+          const raw = localStorage.getItem('orderCreateMemory') || '{}'
+          const obj = JSON.parse(raw)
+          obj[memKey] = {
+            flute: payload.flute,
+            creasingType: payload.creasingType,
+            joinMethod: payload.joinMethod,
+            unitPrice: payload.unitPrice,
+            productTitle: payload.productTitle
+          }
+          localStorage.setItem('orderCreateMemory', JSON.stringify(obj))
+        } catch (e) { void 0 }
+      }
+      setModalOpen(false)
+      setEditingOrder(null)
+      form.resetFields()
+      loadOrders()
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || '提交失败'
+      message.error(msg)
+    }
+  }
+
+  const handleDelete = async (record) => {
+    try {
+      const id = record._id || record.id || record.key
+      await orderAPI.deleteOrder(id)
+      message.success('订单已删�?)
+      loadOrders()
+    } catch (e) {
+      message.error('删除失败')
+    }
+  }
+
+
+
+  const normalizeUpload = (e) => {
+    const fileList = Array.isArray(e) ? e : e && e.fileList
+    if (!fileList) return []
+    return fileList.map(f => {
+      if (f.url) return f
+      if (f.originFileObj && !f.thumbUrl) {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const img = new Image()
+          img.onload = () => {
+            const maxW = 1200
+            const scale = Math.min(1, maxW / img.width)
+            const w = Math.round(img.width * scale)
+            const h = Math.round(img.height * scale)
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0, w, h)
+            try {
+              f.url = canvas.toDataURL('image/jpeg', 0.7)
+            } catch (e) {
+              f.url = ev.target.result
+            }
+            form.setFieldsValue({ attachments: [...(form.getFieldValue('attachments') || [])] })
+          }
+          img.src = ev.target.result
+        }
+        reader.readAsDataURL(f.originFileObj)
+      }
+      return f
+    })
+  }
+
+  const loadMeta = async () => {
+    try {
+      const cusRes = await customerAPI.getCustomers({ page: 1, limit: 100 })
+      const normalizeCustomers = (res) => {
+        if (Array.isArray(res)) return res
+        if (Array.isArray(res?.data)) return res.data
+        if (Array.isArray(res?.data?.customers)) return res.data.customers
+        return []
+      }
+      setCustomers(normalizeCustomers(cusRes))
+    } catch (e) {
+      setCustomers([])
+    }
+    try {
+      const supRes = await supplierAPI.getSuppliers({ page: 1, limit: 1000 })
+      const normalizeSuppliers = (res) => {
+        if (Array.isArray(res)) return res
+        if (Array.isArray(res?.data)) return res.data
+        if (Array.isArray(res?.suppliers)) return res.suppliers
+        if (Array.isArray(res?.data?.suppliers)) return res.data.suppliers
+        return []
+      }
+      setSuppliers(normalizeSuppliers(supRes))
+    } catch (e) {
+      setSuppliers([])
+    }
+  }
+
+  const onCategorySelect = async (value) => {
+    if (value === '__NEW__') {
+      setCreatingCategory(true)
+      return
+    }
+    form.setFieldsValue({ productName: value })
+  }
+
+  const onSupplierSelect = async (value, option) => {
+    if (value === '__NEW__') {
+      setCreatingSupplier(true)
+      return
+    }
+    if (String(value).startsWith('name::')) {
+      const name = option?.label
+      form.setFieldsValue({ supplierId: undefined, supplierName: name })
+      return
+    }
+    const sup = suppliers.find(s => (s._id || s.id) === value)
+    form.setFieldsValue({ supplierId: value, supplierName: sup?.name || '' })
+  }
+
+  const onFluteSelect = (value) => {
+    if (value === '__NEW_FLUTE__') {
+      setCreatingFlute(true)
+      return
+    }
+    form.setFieldsValue({ flute: value })
+  }
+
+  const handleCreateCategory = async () => {
+    const name = form.getFieldValue('newCategoryName')
+    if (!name) return
+    try {
+      await categoryAPI.createCategory({ name })
+      setCategories(prev => Array.from(new Set([...(prev || []), name])))
+      form.setFieldsValue({ productName: name, newCategoryName: undefined })
+      setCreatingCategory(false)
+    } catch (e) {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateSupplier = async () => {
+    const name = form.getFieldValue('newSupplierName')
+    if (!name) return
+    try {
+      const res = await supplierAPI.createSupplier({ name })
+      const created = res?.data
+      setSuppliers(prev => [created, ...(prev || [])])
+      form.setFieldsValue({ supplierId: created?._id || created?.id, supplierName: created?.name, newSupplierName: undefined })
+      setCreatingSupplier(false)
+    } catch (e) {
+      setCreatingSupplier(false)
+    }
+  }
+
+  const handleBatchShipping = () => {
+    const selected = orders.filter(o =>
+      selectedRowKeys.includes(o._id || o.id || o.key)
+    )
+
+    if (selected.length === 0) {
+      message.warning('请先勾选要发货的订�?)
+      return
+    }
+
+    // 初始化发货数量为订单数量
+    const initialValues = {}
+    selected.forEach(order => {
+      const key = order._id || order.id || order.key
+      initialValues[`quantity_${key}`] = order.quantity || 0
+    })
+
+    shippingForm.setFieldsValue(initialValues)
+    setShippingOrders(selected)
+    setBatchShippingOpen(true)
+  }
+
+  const handleConfirmShipping = async () => {
+    try {
+      const values = await shippingForm.validateFields()
+
+      // 构建发货数据
+      const shippingData = shippingOrders.map(order => {
+        const key = order._id || order.id || order.key
+        return {
+          ...order,
+          shippingQuantity: Number(values[`quantity_${key}`])
+        }
+      })
+
+      // 跳转到发货管理页面并传递发货数�?      navigate('/shipping', { state: { shippingOrders: shippingData } })
+
+      // 关闭对话框并清空选择
+      setBatchShippingOpen(false)
+      setShippingOrders([])
+      setSelectedRowKeys([])
+      shippingForm.resetFields()
+
+    } catch (error) {
+      if (error.errorFields) {
+        message.error('请检查发货数量输�?)
+      } else {
+        message.error(error.message || '操作失败')
+      }
+    }
+  }
+
+  return (
+    <ConfigProvider locale={zhCN}>
+      <div>
+        <h2 className="page-title">订单管理</h2>
+
+        <Row gutter={[16, 16]} justify="center" style={{ marginBottom: 16 }}>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#7F7FD5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{monthOrderCount}</div>
+              <div className="stats-label">本月订单</div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#ffb74d', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.ordered}</div>
+              <div className="stats-label">已下�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#ff8a65', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.pending}</div>
+              <div className="stats-label">待生�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#42a5f5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.processing}</div>
+              <div className="stats-label">生产�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#4caf50', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.stocked}</div>
+              <div className="stats-label">已入�?/div>
+            </Card>
+          </Col>
+        </Row>
+
+        <Card style={{ marginBottom: 24 }}>
+          <Space wrap size={20} style={{ marginBottom: 28 }}>
+            <Input
+              placeholder="搜索订单�?客户名称"
+              value={searchParams.keyword}
+              onChange={(e) => {
+                const v = e.target.value
+                const next = { ...searchParams, keyword: v }
+                setSearchParams(next)
+                if (!v) {
+                  applySearch({ ...next, keyword: '' })
+                }
+              }}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <RangePicker
+              value={searchParams.dateRange && searchParams.dateRange.length ? searchParams.dateRange : null}
+              allowClear
+              onChange={(dates) => setSearchParams({ ...searchParams, dateRange: dates || [] })}
+            />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/orders/create')}
+            >
+              新建订单
+            </Button>
+            <Button onClick={openBoardPurchasePreview}>
+              生成采购�?            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+            >
+              订单导出
+            </Button>
+            <Upload
+              accept=".xlsx,.xls"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                void handleImportFile(file)
+                return false
+              }}
+            >
+              <Button icon={<UploadOutlined />} loading={importParsing}>
+                订单导入
+              </Button>
+            </Upload>
+          </Space>
+        </Card>
+
+
+
+        <div>
+          <Table
+            columns={columns}
+            dataSource={orders}
+            loading={loading}
+            rowKey={(record) => record._id || record.id || record.key}
+            rowSelection={selectionMode ? { selectedRowKeys, onChange: setSelectedRowKeys } : undefined}
+            pagination={false}
+            size="small"
+            tableLayout="fixed"
+            scroll={{ x: 'max-content' }}
+            sticky={{ offsetHeader: 0, getContainer: getStickyContainer }}
+          />
+        </div>
+
+        <Modal
+          title={`订单导入预览${importFileName ? `�?{importFileName}` : ''}`}
+          open={importOpen}
+          onCancel={() => {
+            if (importSubmitting) return
+            setImportOpen(false)
+            setImportRows([])
+            setImportFileName('')
+          }}
+          okText="开始导�?
+          cancelText="取消"
+          confirmLoading={importSubmitting}
+          okButtonProps={{
+            disabled: importSubmitting || !(importRows || []).some(r => r.status === 'valid')
+          }}
+          onOk={() => {
+            void (async () => {
+              const valid = (importRows || []).filter(r => r.status === 'valid')
+              if (!valid.length) {
+                message.warning('没有可导入的数据')
+                return
+              }
+              setImportSubmitting(true)
+              try {
+                const chunkSize = 10
+                const results = []
+                for (let i = 0; i < valid.length; i += chunkSize) {
+                  const chunk = valid.slice(i, i + chunkSize)
+                  const settled = await Promise.allSettled(
+                    chunk.map(r => orderAPI.createOrder({ ...buildCreatePayload(r), status: 'ordered' }))
+                  )
+                  settled.forEach((s, idx) => {
+                    results.push({ key: chunk[idx].key, status: s.status, reason: s.status === 'rejected' ? s.reason : undefined })
+                  })
+                }
+
+                const nextRows = (importRows || []).map(r => {
+                  const hit = results.find(x => x.key === r.key)
+                  if (!hit) return r
+                  if (hit.status === 'fulfilled') return { ...r, status: 'success', importError: '' }
+                  const msg = hit.reason?.response?.data?.message || hit.reason?.message || '导入失败'
+                  return { ...r, status: 'failed', importError: msg }
+                })
+                setImportRows(nextRows)
+
+                const successCount = nextRows.filter(r => r.status === 'success').length
+                const failedCount = nextRows.filter(r => r.status === 'failed').length
+                message.success(`导入完成：成�?${successCount} 条，失败 ${failedCount} 条`)
+                await loadOrders()
+              } finally {
+                setImportSubmitting(false)
+              }
+            })()
+          }}
+          width={1100}
+          destroyOnClose
+        >
+          <Space style={{ marginBottom: 12 }} wrap>
+            <Tag color="blue">总行数：{(importRows || []).length}</Tag>
+            <Tag color="green">可导入：{(importRows || []).filter(r => r.status === 'valid').length}</Tag>
+            <Tag color="red">不可导入：{(importRows || []).filter(r => r.status === 'invalid').length}</Tag>
+            <Tag color="green">已导入：{(importRows || []).filter(r => r.status === 'success').length}</Tag>
+            <Tag color="red">失败：{(importRows || []).filter(r => r.status === 'failed').length}</Tag>
+          </Space>
+          <Table
+            columns={importPreviewColumns}
+            dataSource={importRows}
+            rowKey={(r) => r.key}
+            pagination={{ pageSize: 20, showSizeChanger: true }}
+            size="small"
+            scroll={{ x: 'max-content', y: 520 }}
+          />
+        </Modal>
+
+        <Modal
+          title={editingOrder ? '编辑订单' : '新建订单'}
+          open={modalOpen}
+          onOk={handleSubmit}
+          onCancel={() => setModalOpen(false)}
+          destroyOnHidden
+          forceRender
+          width={1000}
+          styles={{ body: { maxHeight: '70vh', overflowY: 'auto', padding: 16 } }}
+        >
+          <Form form={form} layout="vertical" onValuesChange={(changed, all) => {
+            if (changed.boardWidth || changed.creasingSize1 || changed.creasingSize2) {
+              const w = Number(all.boardWidth || 0)
+              const s1 = Number(all.creasingSize1 || 0)
+              const s2 = Number(all.creasingSize2 || 0)
+              const s3 = Math.max(0, w - s1 - s2)
+              form.setFieldsValue({ creasingSize3: s3 })
+            }
+            if (changed.creasingType) {
+              const ct = all.creasingType
+              if (ct === '无压�?) {
+                form.setFieldsValue({ creasingSize1: undefined, creasingSize2: undefined, creasingSize3: undefined })
+              }
+            }
+            if (changed.quantity || changed.unitPrice) {
+              const qty = Number(all.quantity || 0)
+              const price = Number(all.unitPrice || 0)
+              const amt = Math.max(0, qty * price)
+              const dep = Number(all.deposit || 0)
+              form.setFieldsValue({ amount: amt, balance: Math.max(0, amt - dep) })
+            }
+            if (changed.deposit) {
+              const amt = Number(all.amount || 0)
+              const dep = Number(all.deposit || 0)
+              form.setFieldsValue({ balance: Math.max(0, amt - dep) })
+            }
+            if (changed.spec1 || changed.spec2 || changed.spec3) {
+              const a = all.spec1
+              const b = all.spec2
+              const c = all.spec3
+              const parts = [a, b, c].map(v => (v === undefined || v === null) ? '' : String(v).trim()).filter(v => v !== '')
+              const s = parts.length ? parts.join('×') : ''
+              form.setFieldsValue({ spec: s })
+            }
+            if (changed.boardWidth || changed.boardHeight || changed.spec) {
+              try {
+                const k = (all.spec && String(all.spec).trim()) || [String(all.boardWidth || ''), String(all.boardHeight || '')].filter(Boolean).join('×')
+                const raw = localStorage.getItem('orderCreateMemory') || '{}'
+                const obj = JSON.parse(raw)
+                const mem = obj[k]
+                if (mem) {
+                  const patch = {}
+                  if (!all.flute && mem.flute) patch.flute = mem.flute
+                  if (!all.creasingType && mem.creasingType) patch.creasingType = mem.creasingType
+                  if (!all.joinMethod && mem.joinMethod) patch.joinMethod = mem.joinMethod
+                  if (!all.unitPrice && mem.unitPrice) patch.unitPrice = mem.unitPrice
+                  if (!all.productTitle && mem.productTitle) patch.productTitle = mem.productTitle
+                  if (Object.keys(patch).length) form.setFieldsValue(patch)
+                }
+              } catch (e) { void 0 }
+            }
+          }}>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item shouldUpdate noStyle>
+                  {() => {
+                    const orderNo = form.getFieldValue('orderNo')
+                    const qrUrl = form.getFieldValue('qrCodeUrl')
+                    return orderNo && qrUrl ? (
+                      <div style={{ textAlign: 'center', padding: 12, border: '1px dashed #e5e5e5', borderRadius: 8, marginBottom: 12, background: '#fafafa' }}>
+                        <AntImage width={160} src={qrUrl} />
+                      </div>
+                    ) : null
+                  }}
+                </Form.Item>
+                <Form.Item name="orderNo" label="订单编号" style={{ width: 280 }}>
+                  <Input disabled style={{ width: 280 }} />
+                </Form.Item>
+                <Form.Item name="customerId" label="客户名称" rules={[{ validator: async (_, val) => { const name = form.getFieldValue('customerName'); if (val || name) return Promise.resolve(); return Promise.reject('请选择客户') } }]}>
+                  <Select
+                    placeholder="请选择客户"
+                    options={customerOptions}
+                    showSearch
+                    filterOption={false}
+                    style={{ width: 280 }}
+                    onSearch={async (q) => {
+                      try {
+                        const res = await customerAPI.getCustomers({ q, page: 1, limit: 50 })
+                        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.customers) ? res.data.customers : []
+                        setCustomers(list)
+                      } catch (e) {
+                        setCustomers(prev => prev)
+                      }
+                    }}
+                    onChange={(val, option) => {
+                      if (String(val).startsWith('name::')) {
+                        const name = option?.label
+                        form.setFieldsValue({ customerId: undefined, customerName: name })
+                      } else {
+                        const c = (customers || []).find(x => (x._id || x.id) === val)
+                        form.setFieldsValue({ customerId: val, customerName: c?.companyName || c?.name || c?.company })
+                      }
+                    }}
+                    allowClear
+                  />
+                </Form.Item>
+                <Form.Item name="supplierId" label="供应�? rules={[{ required: true, message: '请选择供应�? }]}>
+                  <Select
+                    placeholder="请选择供应�?
+                    options={supplierOptions}
+                    showSearch
+                    optionFilterProp="label"
+                    style={{ width: 280 }}
+                    onChange={onSupplierSelect}
+                    allowClear
+                  />
+                </Form.Item>
+                {creatingSupplier && (
+                  <Space style={{ marginBottom: 8 }}>
+                    <Input
+                      placeholder="输入供应商名�?
+                      style={{ width: 200 }}
+                      value={form.getFieldValue('newSupplierName')}
+                      onChange={(e) => form.setFieldsValue({ newSupplierName: e.target.value })}
+                    />
+                    <Button type="primary" onClick={handleCreateSupplier}>保存</Button>
+                    <Button onClick={() => setCreatingSupplier(false)}>取消</Button>
+                  </Space>
+                )}
+                <Form.Item name="supplierName" hidden>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="quantity" label="数量" rules={[{ required: true, message: '请输入数�? }]}>
+                  <Input type="number" placeholder="请输入数�? style={{ width: 180, color: '#1677ff' }} />
+                </Form.Item>
+                <Form.Item name="unitPrice" label="单价(�?" rules={[{ required: true, message: '请输入单�? }]}>
+                  <Input type="number" placeholder="请输入单�? style={{ width: 180, color: '#ff4d4f' }} />
+                </Form.Item>
+                <Form.Item name="amount" label="金额(�?">
+                  <Input type="number" placeholder="自动计算" readOnly style={{ width: 180, color: '#ff4d4f' }} />
+                </Form.Item>
+                <Form.Item name="deposit" label="已付定金(�?">
+                  <Input type="number" placeholder="请输入已付定�? style={{ width: 180 }} />
+                </Form.Item>
+                <Form.Item name="balance" label="余额(�?">
+                  <Input type="number" placeholder="自动计算" disabled style={{ width: 180 }} />
+                </Form.Item>
+                <Form.Item name="joinMethod" label="拼接方式">
+                  <Select options={[{ value: '打钉', label: '打钉' }, { value: '粘胶', label: '粘胶' }]} allowClear style={{ width: 200 }} />
+                </Form.Item>
+
+              </Col>
+              <Col span={12}>
+                <Form.Item name="productName" label="产品名称" rules={[{ required: true, message: '请选择或新增产品名�? }]} style={{ width: 320 }}>
+                  <>
+                    <Select
+                      placeholder="请选择产品名称"
+                      options={[...(categories || []).map(n => ({ value: n, label: n })), { value: '__NEW__', label: '新增产品名称' }]}
+                      showSearch
+                      onChange={onCategorySelect}
+                      style={{ width: 320 }}
+                    />
+                    {creatingCategory && (
+                      <Space style={{ marginTop: 8 }}>
+                        <Input placeholder="输入产品名称" style={{ width: 200 }} value={form.getFieldValue('newCategoryName')} onChange={(e) => form.setFieldsValue({ newCategoryName: e.target.value })} />
+                        <Button type="primary" onClick={handleCreateCategory}>保存</Button>
+                        <Button onClick={() => setCreatingCategory(false)}>取消</Button>
+                      </Space>
+                    )}
+                  </>
+                </Form.Item>
+                <Form.Item name="materialCode" label="材料编码" rules={[{ required: true, message: '请输入材料编�? }]} style={{ width: 240 }}>
+                  <Input placeholder="请输入材料编�? style={{ width: 240 }} />
+                </Form.Item>
+                <Form.Item label="产品规格（mm�? required>
+                  <Space>
+                    <Form.Item name="spec1" noStyle rules={[{ required: true, message: '请输入规�? }]}>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="spec2" noStyle rules={[{ required: true, message: '请输入规�? }]}>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="spec3" noStyle>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                  </Space>
+                </Form.Item>
+                <Form.Item name="spec" hidden>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="flute" label="愣型" rules={[{ required: true, message: '请选择愣型' }]} style={{ width: 180 }}>
+                  <>
+                    <Select
+                      placeholder="请选择愣型"
+                      options={[
+                        { value: 'AB�?, label: 'AB�? },
+                        { value: 'EB�?, label: 'EB�? },
+                        { value: 'A�?, label: 'A�? },
+                        { value: 'B�?, label: 'B�? },
+                        { value: 'E�?, label: 'E�? },
+                        { value: '__NEW_FLUTE__', label: '新增' }
+                      ]}
+                      onChange={onFluteSelect}
+                      showSearch
+                      style={{ width: 180 }}
+                    />
+                    {creatingFlute && (
+                      <Space style={{ marginTop: 8 }}>
+                        <Input style={{ width: 180 }} placeholder="输入愣型" value={form.getFieldValue('newFlute')} onChange={(e) => form.setFieldsValue({ newFlute: e.target.value })} />
+                        <Button type="primary" onClick={() => { const v = form.getFieldValue('newFlute'); if (v) { form.setFieldsValue({ flute: v, newFlute: undefined }); setCreatingFlute(false) } }}>保存</Button>
+                        <Button onClick={() => setCreatingFlute(false)}>取消</Button>
+                      </Space>
+                    )}
+                  </>
+                </Form.Item>
+                <Form.Item name="creasingType" label="压线方式" style={{ width: 200 }}>
+                  <Select options={[{ value: '凹凸压线', label: '凹凸压线' }, { value: '平压�?, label: '平压�? }, { value: '无压�?, label: '无压�? }]} style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item label="纸板尺寸（门幅mm×长度mm�? required>
+                  <Space>
+                    <Form.Item name="boardWidth" noStyle rules={[{ required: true, message: '请输入门�? }]}>
+                      <Input type="number" placeholder="门幅(mm)" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="boardHeight" noStyle rules={[{ required: true, message: '请输入长�? }]}>
+                      <Input type="number" placeholder="长度(mm)" style={{ width: 120 }} />
+                    </Form.Item>
+                  </Space>
+                </Form.Item>
+                <Form.Item label="压线尺寸（mm�?1-2-3)" shouldUpdate>
+                  {() => {
+                    const isNoCrease = form.getFieldValue('creasingType') === '无压�?
+                    return (
+                      <Space>
+                        <Form.Item name="creasingSize1" noStyle>
+                          <Input type="number" placeholder="尺寸1(mm)" style={{ width: 120 }} disabled={isNoCrease} />
+                        </Form.Item>
+                        -
+                        <Form.Item name="creasingSize2" noStyle>
+                          <Input type="number" placeholder="尺寸2(mm)" style={{ width: 120 }} disabled={isNoCrease} />
+                        </Form.Item>
+                        -
+                        <Form.Item name="creasingSize3" noStyle>
+                          <Input type="number" placeholder="尺寸3(mm,自动)" style={{ width: 120 }} disabled />
+                        </Form.Item>
+                      </Space>
+                    )
+                  }}
+                </Form.Item>
+                <Form.Item name="productTitle" label="商品名称" style={{ width: 320 }}>
+                  <Input placeholder="请输入商品名�? style={{ width: 320 }} />
+                </Form.Item>
+                <Form.Item name="materialNo" label="物料�? style={{ width: 360 }}>
+                  <Input placeholder="请输入物料号" style={{ width: 360 }} />
+                </Form.Item>
+                <Form.Item name="priority" label="优先�? initialValue="normal" style={{ width: 200 }}>
+                  <Select options={[{ value: 'normal', label: '普�? }, { value: 'urgent', label: '加�? }]} style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item name="deliveryDate" label="交付日期" style={{ width: 200 }}>
+                  <DatePicker style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item name="attachments" label="上传图纸" valuePropName="fileList" getValueFromEvent={normalizeUpload}>
+                  <Upload.Dragger multiple listType="picture" beforeUpload={() => false} style={{ height: 160, width: 320, display: 'inline-block' }}>
+                    <p className="ant-upload-drag-icon">📄</p>
+                    <p className="ant-upload-text">点击或拖拽文件到此处上传</p>
+                  </Upload.Dragger>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="notes" label="备注">
+                  <Input.TextArea style={{ height: 100, width: 320 }} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+              </Col>
+            </Row>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="订单详情"
+          open={detailOpen}
+          onOk={() => setDetailOpen(false)}
+          onCancel={() => setDetailOpen(false)}
+          destroyOnHidden
+          width={900}
+          styles={{ body: { maxHeight: '70vh', overflowY: 'auto', padding: 16 } }}
+        >
+          {detailOrder && (
+            <div>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <p>订单编号：{detailOrder.orderNo}</p>
+                  <p>客户名：{detailOrder.customerName}</p>
+                  <p>产品名称：{detailOrder.productName}</p>
+                  <p>产品规格：{detailOrder.spec}</p>
+                  <p>材质编码：{detailOrder.materialCode}</p>
+                  <p>愣型：{detailOrder.flute}</p>
+                </Col>
+                <Col span={12}>
+                  <p>压线尺寸：{(detailOrder.creasingSize1 || 0)}-{(detailOrder.creasingSize2 || 0)}-{(detailOrder.creasingSize3 || 0)}{!detailOrder.creasingSize1 && !detailOrder.creasingSize2 && !detailOrder.creasingSize3 ? (detailOrder.creasingType ? ` (${detailOrder.creasingType})` : '') : ''}</p>
+                  <p>数量：{detailOrder.quantity}</p>
+                  <p>单价：{detailOrder.unitPrice ?? '-'}</p>
+                  <p>金额：{detailOrder.amount}</p>
+                  <p>订单状态：{statusMap[detailOrder.status]?.text || detailOrder.status}</p>
+                </Col>
+              </Row>
+              <Divider />
+              <div>
+                <h4>附件图纸</h4>
+                {Array.isArray(detailOrder.attachments) && detailOrder.attachments.length ? (
+                  <Space wrap>
+                    {detailOrder.attachments.map((f) => (
+                      f.url ? <AntImage key={f.uid} width={160} src={f.url} /> : <Tag key={f.uid}>{f.name}</Tag>
+                    ))}
+                  </Space>
+                ) : (
+                  <Tag>暂无附件</Tag>
+                )}
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          title="批量发货确认"
+          open={batchShippingOpen}
+          onCancel={() => {
+            setBatchShippingOpen(false)
+            setShippingOrders([])
+            shippingForm.resetFields()
+          }}
+          onOk={handleConfirmShipping}
+          width={900}
+          okText="确认发货"
+          cancelText="取消"
+        >
+          <Form form={shippingForm} layout="vertical">
+            <p>已选择 <strong>{shippingOrders.length}</strong> 个订�?/p>
+            <Divider />
+            <Table
+              dataSource={shippingOrders}
+              pagination={false}
+              size="small"
+              scroll={{ y: 400 }}
+              rowKey={(record) => record._id || record.id || record.key}
+              columns={[
+                {
+                  title: '订单�?,
+                  dataIndex: 'orderNo',
+                  key: 'orderNo',
+                  width: 140
+                },
+                {
+                  title: '客户',
+                  dataIndex: 'customerName',
+                  key: 'customerName',
+                  width: 120
+                },
+                {
+                  title: '产品',
+                  dataIndex: 'productName',
+                  key: 'productName',
+                  width: 120
+                },
+                {
+                  title: '订单数量',
+                  dataIndex: 'quantity',
+                  key: 'quantity',
+                  width: 100
+                },
+                {
+                  title: '发货数量',
+                  key: 'shippingQuantity',
+                  width: 150,
+                  render: (_, record) => {
+                    const key = record._id || record.id || record.key
+                    return (
+                      <Form.Item
+                        name={`quantity_${key}`}
+                        rules={[
+                          { required: true, message: '请输入发货数�? },
+                          {
+                            type: 'number',
+                            min: 1,
+                            max: record.quantity,
+                            message: `发货数量必须�?-${record.quantity}之间`
+                          }
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input
+                          type="number"
+                          min={1}
+                          max={record.quantity}
+                          placeholder="发货数量"
+                        />
+                      </Form.Item>
+                    )
+                  }
+                }
+              ]}
+            />
+          </Form>
+        </Modal>
+      </div>
+    </ConfigProvider>
+  )
+}
+
+export default OrderManagement
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Table, Button, Space, Tag, Input, Select, DatePicker, Card, App, Modal, Form, Row, Col, ConfigProvider, Divider, Upload, Image as AntImage } from 'antd'
+import { PlusOutlined, DeleteOutlined, CheckCircleFilled, DownloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { Link, useNavigate } from 'react-router-dom'
+import { orderAPI, customerAPI, supplierAPI, categoryAPI, api } from '../services/api'
+import { matchSizeKeyword } from '../utils'
+import zhCN from 'antd/locale/zh_CN'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+import * as XLSX from 'xlsx'
+
+dayjs.locale('zh-cn')
+
+const { Option } = Select
+const { RangePicker } = DatePicker
+
+function OrderManagement() {
+  const { message } = App.useApp()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [allOrders, setAllOrders] = useState([])
+  const [orders, setOrders] = useState([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailOrder, setDetailOrder] = useState(null)
+  const [form] = Form.useForm()
+  const [customers, setCustomers] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [categories, setCategories] = useState(['纸箱','隔板','天地盒','飞机盒','异性纸盒'])
+  const [creatingSupplier, setCreatingSupplier] = useState(false)
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [creatingFlute, setCreatingFlute] = useState(false)
+  const [supplierHistory, setSupplierHistory] = useState([])
+  const [selectionMode, setSelectionMode] = useState(true)
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importParsing, setImportParsing] = useState(false)
+  const [importSubmitting, setImportSubmitting] = useState(false)
+  const [importRows, setImportRows] = useState([])
+  const [searchParams, setSearchParams] = useState(() => ({
+    keyword: '',
+    quickRange: '',
+    dateRange: []
+  }))
+  const [sortField, setSortField] = useState('')
+  const [sortDir, setSortDir] = useState('desc')
+  const getStickyContainer = useCallback(() => {
+    if (typeof document === 'undefined') return undefined
+    return document.querySelector('.app-content') || document.body
+  }, [])
+
+  const statusMap = {
+    ordered: { text: '已下�?, color: 'purple' },
+    pending: { text: '待生�?, color: 'orange' },
+    processing: { text: '生产�?, color: 'blue' },
+    producing: { text: '生产�?, color: 'blue' },
+    stocked: { text: '已入�?, color: 'geekblue' },
+    shipping: { text: '已发�?, color: 'gold' },
+    completed: { text: '已完�?, color: 'green' },
+    cancelled: { text: '已取�?, color: 'red' }
+  }
+
+  const [stats, setStats] = useState({ total: 0, ordered: 0, pending: 0, processing: 0, stocked: 0 })
+  const [monthOrderCount, setMonthOrderCount] = useState(0)
+
+  const supplierOptions = useMemo(() => {
+    const base = (suppliers || []).map(s => ({ value: s._id || s.id, label: s.name }))
+    const histNames = Array.from(new Set((orders || []).map(o => o.supplierName).filter(n => n && !base.some(b => b.label === n))))
+    const hist = histNames.map(n => ({ value: `name::${n}`, label: n }))
+    return [...base, ...hist, { value: '__NEW__', label: '新增供应�? }]
+  }, [suppliers, orders])
+
+  const customerOptions = useMemo(() => {
+    if ((customers || []).length) {
+      return customers.map(c => ({ value: c._id || c.id, label: c.companyName || c.name || c.company }))
+    }
+    const hist = Array.from(new Set((orders || []).map(o => o.customerName).filter(Boolean)))
+    return hist.map(n => ({ value: `name::${n}`, label: n }))
+  }, [customers, orders])
+
+  const columns = [
+    {
+      title: '订单编号',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
+      width: 90,
+      render: (value, record) => {
+        const id = record._id || record.id || record.key
+        const text = value || record.orderNumber || '-'
+        return id ? <Link to={`/orders/${id}`}>{text}</Link> : text
+      }
+    },
+    {
+      title: '客户',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      width: 120,
+      render: (text, record) => {
+        const customerId = record.customerId || record.customer?._id || record.customer?.id
+        const customerName = text
+        const customer = customers.find(c =>
+          (customerId && (c._id === customerId || c.id === customerId)) ||
+          (c.name === customerName || c.companyName === customerName)
+        )
+        return customer?.shortName || text || '-'
+      }
+    },
+    {
+      title: '产品',
+      key: 'product',
+      width: 180,
+      render: (_, r) => {
+        const w = r.boardWidth; const h = r.boardHeight
+        const sizeText = (w && h) ? `${w}×${h}mm` : ''
+        const rawSpec = r.spec || ''
+        const specText = rawSpec ? (/(mm)$/i.test(rawSpec) ? rawSpec : `${rawSpec}mm`) : ''
+        const productName = r.productName || '-'
+        const c1 = Number(r.creasingSize1 || 0)
+        const c2 = Number(r.creasingSize2 || 0)
+        const c3 = Number(r.creasingSize3 || 0)
+        const type = r.creasingType || ''
+        const creaseText = (c1 || c2 || c3) ? `${c1}-${c2}-${c3}` : (type || '')
+        return (
+          <div>
+            <div style={{ fontWeight: 500 }}>{productName}</div>
+            {specText ? <div>规格：{specText}</div> : null}
+            {sizeText ? <div>{sizeText}</div> : null}
+            {creaseText ? <div style={{ color: '#6b7280' }}>压线：{creaseText}</div> : null}
+          </div>
+        )
+      }
+    },
+    {
+      title: '商品名称',
+      dataIndex: 'goodsName',
+      key: 'goodsName',
+      width: 140,
+      render: (_, r) => {
+        const v = r.goodsName || r.productTitle || (r.items && r.items[0] && (r.items[0].title || r.items[0].productName || r.items[0].goodsName)) || '-'
+        const m = r.materialNo
+        return (
+          <div>
+            <div>{v}</div>
+            {m ? <div style={{ color: '#6b7280' }}>{m}</div> : null}
+          </div>
+        )
+      }
+    },
+    {
+      title: '材质',
+      key: 'material',
+      width: 100,
+      render: (_, r) => (
+        <div>
+          <div>{r.materialCode || '-'}</div>
+          <div style={{ color: '#6b7280' }}>{r.flute || '-'}</div>
+        </div>
+      )
+    },
+
+
+    {
+      title: '数量',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 72
+    },
+    {
+      title: '单价',
+      dataIndex: 'unitPrice',
+      key: 'unitPrice',
+      width: 72
+    },
+    {
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 86,
+      render: (amount) => (amount ?? 0).toLocaleString()
+    },
+    {
+      title: '订单状�?,
+      dataIndex: 'status',
+      key: 'status',
+      width: 84,
+      render: (status, record) => {
+        const showArrived = status === 'ordered' && record?.materialArrived
+        if (showArrived) {
+          return <Tag color="green">已来�?/Tag>
+        }
+        return (
+          <Tag color="green">
+            {statusMap[status]?.text}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: '采购',
+      key: 'materialIn',
+      width: 72,
+      render: (_, record) => {
+        const hasPurchaseOrder = Boolean(record.purchaseOrderNo || record.purchaseOrderId)
+        const poNo = record.purchaseOrderNo ? String(record.purchaseOrderNo) : ''
+        return (
+          <span
+            className={hasPurchaseOrder ? 'material-status material-status--arrived' : 'material-status material-status--pending'}
+            title={hasPurchaseOrder ? (poNo ? `已生成采购单�?{poNo}` : '已生成采购单') : '未生成采购单'}
+          >
+            {hasPurchaseOrder ? (
+              <CheckCircleFilled className="material-status-icon" />
+            ) : (
+              <span className="material-status-circle" />
+            )}
+          </span>
+        )
+      }
+    },
+    {
+      title: '下单时间',
+      key: 'createdAt',
+      width: 110,
+      render: (_, r) => {
+        const t = r.createTime || r.createdAt
+        return t ? dayjs(t).format('YYYY-MM-DD HH:mm') : '-'
+      }
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 60,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined style={{ fontSize: 20 }} />}
+            onClick={() => {
+              const id = record._id || record.id || record.key
+              Modal.confirm({
+                title: '确认删除',
+                content: '删除后不可恢复，是否确认删除该订单？',
+                okText: '删除',
+                okType: 'danger',
+                cancelText: '取消',
+                onOk: () => handleDelete(record)
+              })
+            }}
+          />
+        </Space>
+      )
+    }
+  ]
+
+  const extractList = (res) => {
+    if (Array.isArray(res)) return res
+    if (res && Array.isArray(res.data)) return res.data
+    if (res && res.data && Array.isArray(res.data.orders)) return res.data.orders
+    if (res && res.data && res.data.data && Array.isArray(res.data.data.orders)) return res.data.data.orders
+    return []
+  }
+
+  const extractPagination = (res) => {
+    return res?.pagination || res?.data?.pagination || res?.data?.data?.pagination || {}
+  }
+
+  const fetchAllPages = async (fn, baseParams, options = {}) => {
+    const pageKey = options.pageKey || 'page'
+    const sizeKey = options.sizeKey || 'pageSize'
+    const pageSize = Number(options.pageSize || 200)
+    const maxPages = Number(options.maxPages || 5000)
+    const all = []
+    for (let page = 1; page <= maxPages; page += 1) {
+      const resp = await fn({ ...(baseParams || {}), [pageKey]: page, [sizeKey]: pageSize })
+      const rows = extractList(resp)
+      if (rows.length) all.push(...rows)
+      const pagination = extractPagination(resp)
+      const totalPages = Number(pagination?.totalPages || pagination?.pages || 0)
+      const hasMore = pagination?.hasMore
+      if (totalPages > 0 && page >= totalPages) break
+      if (hasMore === false) break
+      if (!rows.length || rows.length < pageSize) break
+    }
+    return all
+  }
+
+  const normalizeOrders = (data, pageNo) => {
+    const buildQrServerUrl = (payload, size = 220) => {
+      const s = Number(size) || 220
+      return `https://api.qrserver.com/v1/create-qr-code/?size=${s}x${s}&data=${encodeURIComponent(String(payload || ''))}`
+    }
+    const buildOrderQrPayload = ({ orderId, orderNo }) => {
+      return JSON.stringify({ v: 1, orderId: String(orderId || '').trim(), orderNo: String(orderNo || '').trim() })
+    }
+    const normalizeQrUrl = (rawUrl, { orderId, orderNo }) => {
+      const url = String(rawUrl || '').trim()
+      if (url) {
+        const lower = url.toLowerCase()
+        if (lower.includes('api.qrserver.com/v1/create-qr-code')) {
+          const sizeMatch = url.match(/[?&]size=([^&]+)/i)
+          const sizeVal = sizeMatch ? String(sizeMatch[1]) : ''
+          const okSize = /^\d+x\d+$/i.test(sizeVal)
+          const hasData = /[?&]data=/.test(url)
+          if (okSize && hasData) return url
+          return buildQrServerUrl(buildOrderQrPayload({ orderId, orderNo }), 220)
+        }
+        return url
+      }
+      if (!orderId && !orderNo) return ''
+      return buildQrServerUrl(buildOrderQrPayload({ orderId, orderNo }), 220)
+    }
+    const list = (data || []).map((o, idx) => ({
+      ...o,
+      key: o._id ?? o.id ?? `order_${pageNo}_${idx}`,
+      orderNo: o.orderNo ?? o.orderNumber ?? '',
+      customerName: o.customerName ?? o.customer?.name ?? o.customer,
+      productName: o.productName ?? o.product?.name ?? o.product,
+      goodsName: (() => {
+        const items = Array.isArray(o.items) ? o.items : []
+        const first = items[0] || {}
+        return o.goodsName || o.productTitle || first.goodsName || first.title || first.productName || o.goods_name || o.title || '-'
+      })(),
+      orderType: String(o.orderType || '').toLowerCase(),
+      boardWidth: o.boardWidth,
+      boardHeight: o.boardHeight,
+      materialNo: o.materialNo ?? (o.items && o.items[0] && o.items[0].materialNo) ?? undefined,
+      quantity: o.quantity ?? o.totalQty ?? o.items?.reduce((s, it) => s + (it.quantity || 0), 0) ?? 0,
+      unitPrice: o.unitPrice ?? (o.items && o.items[0] && o.items[0].unitPrice) ?? undefined,
+      amount: o.amount ?? o.totalAmount ?? o.finalAmount ?? 0,
+      stockedAtTs: (() => {
+        const t = o.stockedAt || o.warehouseAt || o.updatedAt || null
+        if (!t) return 0
+        try { return dayjs(t).valueOf() } catch { return 0 }
+      })(),
+      status: (() => {
+        const s = String(o.status || '').toLowerCase()
+        if (['ordered'].includes(s)) return 'ordered'
+        if (['pending', 'waiting'].includes(s)) return 'pending'
+        if (['processing', 'in_progress', 'producing'].includes(s)) return 'processing'
+        if (['stocked', 'warehoused'].includes(s)) return 'stocked'
+        if (['shipped', 'shipping', 'delivered'].includes(s)) return 'shipping'
+        if (['completed', 'done'].includes(s)) return 'completed'
+        return 'ordered'
+      })(),
+      priority: o.priority ?? 'normal',
+      createTime: o.createTime ?? o.createdAt ?? null,
+      deliveryDate: o.deliveryDate ?? null,
+      spec: o.spec,
+      materialCode: o.materialCode,
+      flute: o.flute,
+      creasingType: o.creasingType,
+      creasingSize1: o.creasingSize1,
+      creasingSize2: o.creasingSize2,
+      creasingSize3: o.creasingSize3,
+      materialArrived: !!(o.materialArrived || o.material_status === 'arrived'),
+      qrCodeUrl: normalizeQrUrl(o.qrCodeUrl, { orderId: o._id ?? o.id ?? '', orderNo: o.orderNo ?? o.orderNumber ?? '' })
+    }))
+
+    return list.filter(o => String(o.source || '').toLowerCase() !== 'purchased' && o.orderType !== 'purchase')
+  }
+
+  const mergeOrders = (prev, next) => {
+    const map = new Map()
+    for (const o of prev || []) {
+      const k = o._id || o.id || o.key
+      if (k != null) map.set(String(k), o)
+    }
+    for (const o of next || []) {
+      const k = o._id || o.id || o.key
+      if (k != null) map.set(String(k), o)
+    }
+    return Array.from(map.values())
+  }
+
+  const applySearch = useCallback((params) => {
+    const kw = String(params.keyword || '').toLowerCase().trim()
+    let data = [...allOrders]
+    if (kw) {
+      data = data.filter(o => {
+        const sizeMatch = matchSizeKeyword(
+          params.keyword,
+          { a: o.boardWidth, b: o.boardHeight },
+          o.spec,
+          o.materialNo
+        )
+        const f = [
+          o.orderNo,
+          o.orderNumber,
+          o.order_id,
+          o.customerName,
+          o.customer?.name,
+          o.productName,
+          o.product?.name,
+          o.goodsName,
+          o.spec,
+          o.boardWidth,
+          o.boardHeight,
+          o.materialNo,
+          o.creasingType,
+          o.creasingSize1,
+          o.creasingSize2,
+          o.creasingSize3
+        ]
+        return sizeMatch || f.some(v => v && String(v).toLowerCase().includes(kw))
+      })
+    }
+    const [start, end] = params.dateRange || []
+    if (start && end) {
+      data = data.filter(o => {
+        const t = o.createTime || o.createdAt
+        if (!t) return false
+        const d = dayjs(t)
+        return d.isAfter(dayjs(start).startOf('day')) && d.isBefore(dayjs(end).endOf('day'))
+      })
+    }
+    const keyGetter = (o) => {
+      if (sortField === 'time') return Number(o.stockedAtTs || 0)
+      if (sortField === 'qty') return Number(o.quantity || 0)
+      if (sortField === 'amount') return Number(o.amount || 0)
+      return 0
+    }
+    data = data.slice().sort((a, b) => {
+      const av = keyGetter(a)
+      const bv = keyGetter(b)
+      return sortDir === 'desc' ? (bv - av) : (av - bv)
+    })
+    setOrders(data)
+  }, [allOrders, sortDir, sortField])
+
+  useEffect(() => {
+    applySearch(searchParams)
+  }, [applySearch, searchParams])
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true)
+    try {
+      const all = await fetchAllPages(
+        orderAPI.getOrders,
+        {
+          orderBy: 'createdAt_desc',
+          excludeOrderType: 'purchase'
+        },
+        { pageSize: 200, maxPages: 5000 }
+      )
+
+      const normalized = normalizeOrders(all, 1)
+      setAllOrders(normalized)
+
+      const monthStart = dayjs().startOf('month')
+      const monthEnd = dayjs().endOf('month')
+      const monthCount = normalized.filter(o => {
+        const t = o.createTime || o.createdAt
+        if (!t) return false
+        const d = dayjs(t)
+        return d.isAfter(monthStart.subtract(1, 'millisecond')) && d.isBefore(monthEnd.add(1, 'millisecond'))
+      }).length
+      setMonthOrderCount(monthCount)
+
+      const ordered = normalized.filter(o => o.status === 'ordered').length
+      const pending = normalized.filter(o => o.status === 'pending').length
+      const processing = normalized.filter(o => o.status === 'processing' || o.status === 'producing').length
+      const stocked = normalized.filter(o => o.status === 'stocked').length
+      const total = normalized.length
+      setStats({ total, ordered, pending, processing, stocked })
+    } catch (e) {
+      message.error('加载订单失败')
+      setAllOrders([])
+      setOrders([])
+      setStats({ total: 0, ordered: 0, pending: 0, processing: 0, stocked: 0 })
+      setMonthOrderCount(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [message])
+
+
+
+  const handleSearch = () => {
+    applySearch(searchParams)
+  }
+
+  const handleExport = () => {
+    try {
+      const getCustomerShortName = (order) => {
+        const customerId = order.customerId || order.customer?._id || order.customer?.id
+        const customerName = order.customerName
+        const customer = customers.find(c =>
+          (customerId && (c._id === customerId || c.id === customerId)) ||
+          (c.name === customerName || c.companyName === customerName)
+        )
+        return customer?.shortName || customerName || ''
+      }
+
+      const getSupplierShortName = (order) => {
+        const supplierId = order.supplierId || order.supplier?._id || order.supplier?.id
+        const supplierName = order.supplierName
+        const supplier = suppliers.find(s =>
+          (supplierId && (s._id === supplierId || s.id === supplierId)) ||
+          (s.name === supplierName || s.companyName === supplierName)
+        )
+        return supplier?.shortName || supplierName || ''
+      }
+
+      const getGoodsName = (order) => {
+        return (
+          order.goodsName ||
+          order.productTitle ||
+          (order.items && order.items[0] && (order.items[0].title || order.items[0].productName || order.items[0].goodsName)) ||
+          ''
+        )
+      }
+
+      const parseSpecDims = (order) => {
+        const raw = String(order?.spec || '').trim()
+        if (!raw) return { specL: '', specW: '', specH: '' }
+        const cleaned = raw.replace(/mm/gi, '').trim()
+        const parts = cleaned.split(/[×xX*]/).map(s => s.trim()).filter(Boolean)
+        const nums = parts.map(p => Number(String(p).replace(/[^\d.]/g, ''))).filter(n => Number.isFinite(n))
+        return {
+          specL: nums[0] ?? '',
+          specW: nums[1] ?? '',
+          specH: nums[2] ?? ''
+        }
+      }
+
+      const getMaterialNo = (order) => {
+        return (
+          order.materialNo ||
+          (order.items && order.items[0] && (order.items[0].materialNo || order.items[0].material_no)) ||
+          ''
+        )
+      }
+
+      const header1 = [
+        '客名（简称）',
+        '产品类别',
+        '商品名称',
+        '物料�?,
+        '规格尺寸（mm�?,
+        '',
+        '',
+        '材质编码',
+        '楞别',
+        '纸板尺寸（mm�?,
+        '',
+        '压线尺寸（mm�?,
+        '',
+        '',
+        '压线类型',
+        '下单片数',
+        '数量',
+        '单位',
+        '供应商（简称）',
+        '拼接方式',
+        '单价',
+        '金额',
+        '备注'
+      ]
+      const header2 = [
+        '',
+        '',
+        '',
+        '',
+        '�?,
+        '�?,
+        '�?,
+        '',
+        '',
+        '宽（门幅�?,
+        '长度',
+        '压线1',
+        '压线2',
+        '压线3',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
+      ]
+
+      const keyOf = (r) => r?._id || r?.id || r?.key
+      const selectedSet = new Set((selectedRowKeys || []).map(String))
+      const sourceOrders = selectedSet.size
+        ? (orders || []).filter((r) => selectedSet.has(String(keyOf(r))))
+        : (orders || [])
+      const rows = sourceOrders.map(o => {
+        const { specL, specW, specH } = parseSpecDims(o)
+        const sheetCount = o.sheetCount ?? o.totalQty ?? ''
+        const quantity = o.quantity ?? ''
+        const unit = o.unit ?? ''
+        const supplierShortName = getSupplierShortName(o)
+        const joinMethod = o.joinMethod ?? ''
+        const unitPrice = o.unitPrice ?? o.price ?? ''
+        const amount = o.amount ?? o.totalAmount ?? ''
+        return [
+          getCustomerShortName(o),
+          o.productName || '',
+          getGoodsName(o),
+          getMaterialNo(o),
+          specL,
+          specW,
+          specH,
+          o.materialCode || '',
+          o.flute || '',
+          o.boardWidth ?? '',
+          o.boardHeight ?? '',
+          o.creasingSize1 ?? '',
+          o.creasingSize2 ?? '',
+          o.creasingSize3 ?? '',
+          o.creasingType || '',
+          sheetCount,
+          quantity,
+          unit,
+          supplierShortName,
+          joinMethod,
+          unitPrice,
+          amount,
+          o.notes || ''
+        ]
+      })
+
+      const ws = XLSX.utils.aoa_to_sheet([header1, header2, ...rows])
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
+        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+        { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
+        { s: { r: 0, c: 7 }, e: { r: 1, c: 7 } },
+        { s: { r: 0, c: 8 }, e: { r: 1, c: 8 } },
+        { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } },
+        { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } },
+        { s: { r: 0, c: 14 }, e: { r: 1, c: 14 } },
+        { s: { r: 0, c: 15 }, e: { r: 1, c: 15 } },
+        { s: { r: 0, c: 16 }, e: { r: 1, c: 16 } },
+        { s: { r: 0, c: 17 }, e: { r: 1, c: 17 } },
+        { s: { r: 0, c: 18 }, e: { r: 1, c: 18 } },
+        { s: { r: 0, c: 19 }, e: { r: 1, c: 19 } },
+        { s: { r: 0, c: 20 }, e: { r: 1, c: 20 } },
+        { s: { r: 0, c: 21 }, e: { r: 1, c: 21 } },
+        { s: { r: 0, c: 22 }, e: { r: 1, c: 22 } }
+      ]
+      ws['!cols'] = [
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 8 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 16 }
+      ]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, "订单列表")
+
+      XLSX.writeFile(wb, `订单导出_${dayjs().format('YYYYMMDDHHmm')}.xlsx`)
+      message.success('导出成功')
+    } catch (e) {
+      console.error(e)
+      message.error('导出失败')
+    }
+  }
+
+  const normalizeHeaderKey = (k) => String(k || '').trim()
+
+  const parseReadableNumber = (v) => {
+    if (v === undefined || v === null) return NaN
+    if (typeof v === 'number') return v
+    const s = String(v).trim()
+    if (!s) return NaN
+    const cleaned = s.replace(/[,，\s]/g, '')
+    const n = Number(cleaned)
+    return Number.isFinite(n) ? n : NaN
+  }
+
+  const parseBoardSizeText = (v) => {
+    const s = String(v || '').trim()
+    if (!s) return {}
+    const cleaned = s.replace(/mm$/i, '').trim()
+    const parts = cleaned.split(/[×xX*]/).map(p => p.trim()).filter(Boolean)
+    const w = parseReadableNumber(parts[0])
+    const h = parseReadableNumber(parts[1])
+    return {
+      boardWidth: Number.isFinite(w) ? w : undefined,
+      boardHeight: Number.isFinite(h) ? h : undefined
+    }
+  }
+
+  const parseCreaseText = (v) => {
+    const s = String(v || '').trim()
+    if (!s) return {}
+    const parts = s.split(/[-—–]/).map(p => p.trim()).filter(Boolean)
+    const c1 = parseReadableNumber(parts[0])
+    const c2 = parseReadableNumber(parts[1])
+    const c3 = parseReadableNumber(parts[2])
+    return {
+      creasingSize1: Number.isFinite(c1) ? c1 : undefined,
+      creasingSize2: Number.isFinite(c2) ? c2 : undefined,
+      creasingSize3: Number.isFinite(c3) ? c3 : undefined
+    }
+  }
+
+  const normalizeImportRow = (raw, idx) => {
+    const normalized = {}
+    Object.entries(raw || {}).forEach(([k, v]) => {
+      const nk = normalizeHeaderKey(k)
+      if (!nk) return
+      normalized[nk] = v
+    })
+
+    const pick = (...keys) => {
+      for (const k of keys) {
+        const nk = normalizeHeaderKey(k)
+        if (Object.prototype.hasOwnProperty.call(normalized, nk)) return normalized[nk]
+      }
+      return undefined
+    }
+
+    const customerText = String(pick('客名（简称）', '客户', '客户名称', '客名', '客名(简�?', '客名（简�?) || '').trim()
+    const productName = String(pick('产品类别', '产品', '产品名称') || '').trim()
+    const goodsName = String(pick('商品名称', '品名', '商品', '产品标题') || '').trim()
+    const materialNo = String(pick('物料�?, '物料编号', '物料') || '').trim()
+    const specRaw = String(pick('规格尺寸（mm�?, '规格尺寸', '规格', '尺寸') || '').trim()
+    const spec = specRaw ? (/(mm)$/i.test(specRaw) ? specRaw : `${specRaw}mm`) : ''
+    const materialCode = String(pick('材质编码', '材质', '材质代码') || '').trim()
+    const flute = String(pick('楞别', '楞型') || '').trim()
+    const paperSize = pick('纸板尺寸（mm�?, '纸板尺寸', '纸板', '纸板规格')
+    const creaseSize = pick('压线尺寸（mm�?, '压线尺寸', '压线')
+    const creasingType = String(pick('压线类型', '压线方式') || '').trim()
+    const supplierShortName = String(pick('供应商（简称）', '供应商简�?, '供应�?简�?', '供应商（简�?, '供应商简') || '').trim()
+    const joinMethod = String(pick('拼接方式', '拼接') || '').trim()
+    const notes = String(pick('备注', '说明') || '').trim()
+
+    const sheetCountRaw = pick('下单片数', '片数', '下单片数(�?', '下单片数（片�?)
+    const sheetCountN = parseReadableNumber(sheetCountRaw)
+    const sheetCount = Number.isFinite(sheetCountN) ? Math.round(sheetCountN) : NaN
+    const quantityRaw = pick('数量', '下单数量')
+    const quantityN = parseReadableNumber(quantityRaw)
+    const quantity = Number.isFinite(quantityN) ? Math.round(quantityN) : NaN
+    const unit = String(pick('单位') || '').trim() || undefined
+
+    const unitPriceRaw = pick('单价', '含税单价', '价格')
+    const amountRaw = pick('金额', '订单金额', '总金�?, '合计')
+    const unitPriceN = parseReadableNumber(unitPriceRaw)
+    const amountN = parseReadableNumber(amountRaw)
+
+    let unitPrice = Number.isFinite(unitPriceN) ? unitPriceN : NaN
+    let amount = Number.isFinite(amountN) ? amountN : NaN
+    if (!Number.isFinite(amount) && Number.isFinite(sheetCount) && Number.isFinite(unitPrice)) {
+      amount = Number(sheetCount) * Number(unitPrice)
+    }
+    if (!Number.isFinite(amount) && Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      amount = Number(quantity) * Number(unitPrice)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(sheetCount) && Number.isFinite(amount) && Number(sheetCount) !== 0) {
+      unitPrice = Number(amount) / Number(sheetCount)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(quantity) && Number.isFinite(amount) && Number(quantity) !== 0) {
+      unitPrice = Number(amount) / Number(quantity)
+    }
+
+    const customer = (customers || []).find(c => {
+      const shortName = String(c?.shortName || '').trim()
+      const name = String(c?.name || '').trim()
+      const companyName = String(c?.companyName || '').trim()
+      return (
+        (shortName && shortName === customerText) ||
+        (name && name === customerText) ||
+        (companyName && companyName === customerText)
+      )
+    })
+
+    const mappedCustomerId = customer ? (customer._id || customer.id) : undefined
+    const customerId = mappedCustomerId || customerText || undefined
+    const customerName = customer ? (customer.companyName || customer.name || customerText) : customerText
+
+    const size = parseBoardSizeText(paperSize)
+    const crease = parseCreaseText(creaseSize)
+
+    const errors = []
+    if (!customerText) errors.push('缺少客户')
+    if (!productName) errors.push('缺少产品类别')
+    if (!supplierShortName) errors.push('缺少供应商（简称）')
+    if (joinMethod && !['打钉', '粘胶'].includes(joinMethod)) errors.push('拼接方式仅支持：打钉/粘胶')
+    if ((!Number.isFinite(sheetCount) || sheetCount <= 0) && (!Number.isFinite(quantity) || quantity <= 0)) {
+      errors.push('缺少下单片数/数量')
+    }
+    if (!Number.isFinite(amount) || amount <= 0) errors.push('缺少金额/单价')
+
+    return {
+      key: `import_${idx}`,
+      rowIndex: idx + 2,
+      customerText,
+      customerId,
+      customerName,
+      productName,
+      goodsName,
+      materialNo,
+      spec,
+      materialCode,
+      flute,
+      ...size,
+      creasingType,
+      ...crease,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : (Number.isFinite(sheetCount) ? sheetCount : undefined),
+      unit,
+      supplierShortName,
+      joinMethod: joinMethod || undefined,
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : undefined,
+      amount: Number.isFinite(amount) ? amount : undefined,
+      sheetCount: Number.isFinite(sheetCount) ? sheetCount : undefined,
+      notes,
+      errors,
+      status: errors.length ? 'invalid' : 'valid'
+    }
+  }
+
+  const normalizeTemplateRow = (row, excelRowIndex) => {
+    const getText = (i) => String(row?.[i] ?? '').trim()
+    const getNum = (i) => {
+      const n = parseReadableNumber(row?.[i])
+      return Number.isFinite(n) ? n : undefined
+    }
+
+    const customerText = getText(0)
+    const productName = getText(1)
+    const goodsName = getText(2)
+    const materialNo = getText(3)
+    const specL = getNum(4)
+    const specW = getNum(5)
+    const specH = getNum(6)
+    const materialCode = getText(7)
+    const flute = getText(8)
+    const boardWidth = getNum(9)
+    const boardHeight = getNum(10)
+    const creasingSize1 = getNum(11)
+    const creasingSize2 = getNum(12)
+    const creasingSize3 = getNum(13)
+    const creasingType = getText(14)
+    const sheetCountN = parseReadableNumber(row?.[15])
+    const sheetCount = Number.isFinite(sheetCountN) ? Math.round(sheetCountN) : undefined
+    const quantityN = parseReadableNumber(row?.[16])
+    const quantity = Number.isFinite(quantityN) ? Math.round(quantityN) : undefined
+    const unit = getText(17) || undefined
+    const supplierShortName = getText(18)
+    const joinMethod = getText(19)
+    const unitPriceN = parseReadableNumber(row?.[20])
+    const amountN = parseReadableNumber(row?.[21])
+    const notes = getText(22)
+
+    let amount = Number.isFinite(amountN) ? amountN : NaN
+    let unitPrice = Number.isFinite(unitPriceN) ? unitPriceN : NaN
+    if (!Number.isFinite(amount) && Number.isFinite(sheetCount) && Number.isFinite(unitPrice)) {
+      amount = Number(sheetCount) * Number(unitPrice)
+    }
+    if (!Number.isFinite(amount) && Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      amount = Number(quantity) * Number(unitPrice)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(sheetCount) && Number.isFinite(amount) && Number(sheetCount) !== 0) {
+      unitPrice = Number(amount) / Number(sheetCount)
+    }
+    if (!Number.isFinite(unitPrice) && Number.isFinite(quantity) && Number.isFinite(amount) && Number(quantity) !== 0) {
+      unitPrice = Number(amount) / Number(quantity)
+    }
+
+    const customer = (customers || []).find(c => {
+      const shortName = String(c?.shortName || '').trim()
+      const name = String(c?.name || '').trim()
+      const companyName = String(c?.companyName || '').trim()
+      return (
+        (shortName && shortName === customerText) ||
+        (name && name === customerText) ||
+        (companyName && companyName === customerText)
+      )
+    })
+    const mappedCustomerId = customer ? (customer._id || customer.id) : undefined
+    const customerId = mappedCustomerId || customerText || undefined
+    const customerName = customer ? (customer.companyName || customer.name || customerText) : customerText
+
+    const specParts = [specL, specW, specH].filter(v => v !== undefined && v !== '')
+    const spec = specParts.length ? `${specParts.join('×')}mm` : ''
+
+    const errors = []
+    if (!customerText) errors.push('缺少客户')
+    if (!productName) errors.push('缺少产品类别')
+    if (!Number.isFinite(sheetCount) || sheetCount <= 0) errors.push('缺少下单片数')
+    if (!supplierShortName) errors.push('缺少供应商（简称）')
+    if (joinMethod && !['打钉', '粘胶'].includes(joinMethod)) errors.push('拼接方式仅支持：打钉/粘胶')
+    if (!Number.isFinite(amount) || amount <= 0) errors.push('缺少金额/单价')
+
+    return {
+      key: `import_${excelRowIndex}`,
+      rowIndex: excelRowIndex,
+      customerText,
+      customerId,
+      customerName,
+      productName,
+      goodsName,
+      materialNo,
+      spec,
+      materialCode,
+      flute,
+      boardWidth,
+      boardHeight,
+      creasingType,
+      creasingSize1,
+      creasingSize2,
+      creasingSize3,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : sheetCount,
+      unit,
+      supplierShortName,
+      joinMethod: joinMethod || undefined,
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : undefined,
+      amount: Number.isFinite(amount) ? amount : undefined,
+      sheetCount,
+      notes,
+      errors,
+      status: errors.length ? 'invalid' : 'valid'
+    }
+  }
+
+  const readExcelAsRows = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('读取文件失败'))
+      reader.onload = () => {
+        try {
+          const buf = reader.result
+          const wb = XLSX.read(buf, { type: 'array' })
+          const firstName = (wb.SheetNames || [])[0]
+          if (!firstName) throw new Error('未找到工作表')
+          const ws = wb.Sheets[firstName]
+          const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+          const headerRowIdx = (aoa || []).findIndex((r) => {
+            const a = String(r?.[0] ?? '').trim()
+            const b = String(r?.[1] ?? '').trim()
+            const c = String(r?.[2] ?? '').trim()
+            return a.includes('客名') && b.includes('产品') && c.includes('商品')
+          })
+          const subHeaderRow = headerRowIdx >= 0 ? (aoa?.[headerRowIdx + 1] || []) : []
+          const isTemplate =
+            headerRowIdx >= 0 &&
+            String(subHeaderRow?.[4] ?? '').trim() === '�? &&
+            String(subHeaderRow?.[5] ?? '').trim() === '�? &&
+            String(subHeaderRow?.[6] ?? '').trim() === '�?
+          if (isTemplate) {
+            resolve({ sheetName: firstName, mode: 'template', headerRowIdx, rows: aoa })
+            return
+          }
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+          resolve({ sheetName: firstName, mode: 'json', rows })
+        } catch (e) {
+          reject(e)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  const handleImportFile = async (file) => {
+    setImportParsing(true)
+    setImportFileName(file?.name || '')
+    try {
+      const parsed = await readExcelAsRows(file)
+      const mode = parsed?.mode || 'json'
+      const normalized = (() => {
+        if (mode === 'template') {
+          const aoa = Array.isArray(parsed?.rows) ? parsed.rows : []
+          const headerRowIdx = Number(parsed?.headerRowIdx ?? -1)
+          const dataStart = headerRowIdx >= 0 ? headerRowIdx + 2 : 2
+          return aoa
+            .slice(dataStart)
+            .map((r, idx) => ({ r, excelRow: dataStart + idx + 1 }))
+            .filter(({ r }) => Array.isArray(r) && r.some(v => String(v ?? '').trim() !== ''))
+            .map(({ r, excelRow }) => normalizeTemplateRow(r, excelRow))
+            .filter(r => r.customerText || r.productName || Number.isFinite(r.quantity) || r.goodsName || r.spec)
+        }
+        const rows = Array.isArray(parsed?.rows) ? parsed.rows : []
+        return rows
+          .map((r, idx) => normalizeImportRow(r, idx))
+          .filter(r => r.customerText || r.productName || Number.isFinite(r.quantity) || r.goodsName || r.spec)
+      })()
+      if (!normalized.length) {
+        message.error('未识别到可导入的数据')
+        setImportOpen(false)
+        setImportRows([])
+        return false
+      }
+      setImportRows(normalized)
+      setImportOpen(true)
+      return false
+    } catch (e) {
+      message.error(e?.message || '解析Excel失败')
+      setImportOpen(false)
+      setImportRows([])
+      return false
+    } finally {
+      setImportParsing(false)
+    }
+  }
+
+  const importPreviewColumns = useMemo(() => ([
+    { title: '�?, dataIndex: 'rowIndex', key: 'rowIndex', width: 70 },
+    { title: '客户', dataIndex: 'customerName', key: 'customerName', width: 140, ellipsis: true },
+    { title: '产品类别', dataIndex: 'productName', key: 'productName', width: 140, ellipsis: true },
+    { title: '商品名称', dataIndex: 'goodsName', key: 'goodsName', width: 160, ellipsis: true },
+    { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 90 },
+    { title: '供应商（简称）', dataIndex: 'supplierShortName', key: 'supplierShortName', width: 140, ellipsis: true },
+    { title: '拼接方式', dataIndex: 'joinMethod', key: 'joinMethod', width: 110 },
+    {
+      title: '单价',
+      dataIndex: 'unitPrice',
+      key: 'unitPrice',
+      width: 100,
+      render: (v) => (v === undefined || v === null || v === '') ? '' : Number(v).toFixed(4).replace(/\.?0+$/, '')
+    },
+    {
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 110,
+      render: (v) => (v === undefined || v === null || v === '') ? '' : Number(v).toFixed(2).replace(/\.00$/, '')
+    },
+    {
+      title: '结果',
+      key: 'status',
+      width: 120,
+      render: (_, r) => {
+        if (r.status === 'success') return <Tag color="green">已导�?/Tag>
+        if (r.status === 'failed') return <Tag color="red">失败</Tag>
+        if (r.status === 'invalid') return <Tag color="red">不可导入</Tag>
+        return <Tag color="blue">可导�?/Tag>
+      }
+    },
+    {
+      title: '错误信息',
+      key: 'errors',
+      width: 240,
+      render: (_, r) => {
+        const msgs = Array.isArray(r.errors) ? r.errors : []
+        const err = r.importError ? [r.importError, ...msgs] : msgs
+        return err.length ? err.join('�?) : ''
+      }
+    }
+  ]), [importRows])
+
+  const buildCreatePayload = (r) => {
+    const baseURL = String(api?.defaults?.baseURL || '')
+    const isCloudBridge = baseURL.includes('api-bridge')
+    const supplierText = String(r.supplierShortName || '').trim()
+    const supplier = supplierText ? (suppliers || []).find(s => {
+      const shortName = String(s?.shortName || '').trim()
+      const name = String(s?.name || '').trim()
+      const companyName = String(s?.companyName || '').trim()
+      return (
+        (shortName && shortName === supplierText) ||
+        (name && name === supplierText) ||
+        (companyName && companyName === supplierText)
+      )
+    }) : undefined
+    let payload = {
+      customerName: r.customerName,
+      supplierId: supplier ? (supplier._id || supplier.id) : undefined,
+      supplierName: supplier ? (supplier.name || supplier.companyName || supplierText) : supplierText || undefined,
+      productName: r.productName,
+      productTitle: r.goodsName || undefined,
+      goodsName: r.goodsName || undefined,
+      quantity: r.quantity,
+      unit: r.unit || '�?,
+      unitPrice: r.unitPrice,
+      amount: r.amount,
+      totalAmount: r.amount,
+      createdAt: Date.now(),
+      deliveryDate: null,
+      priority: 'normal',
+      boardWidth: r.boardWidth,
+      boardHeight: r.boardHeight,
+      creasingType: r.creasingType,
+      creasingSize1: r.creasingSize1,
+      creasingSize2: r.creasingSize2,
+      creasingSize3: r.creasingSize3,
+      spec: r.spec,
+      flute: r.flute,
+      materialCode: r.materialCode,
+      materialNo: r.materialNo,
+      sheetCount: r.sheetCount,
+      joinMethod: r.joinMethod,
+      notes: r.notes,
+      orderType: 'production'
+    }
+    if (isCloudBridge) {
+      payload = {
+        ...payload,
+        customerId: r.customerId || r.customerName || 'PC',
+        items: [{
+          name: r.productName,
+          quantity: Number(r.quantity || 0),
+          unit: r.unit || '�?,
+          unitPrice: Number(r.unitPrice || 0),
+          spec: r.spec,
+          materialCode: r.materialCode,
+          materialNo: r.materialNo,
+          flute: r.flute,
+          boardWidth: r.boardWidth,
+          boardHeight: r.boardHeight,
+          creasingType: r.creasingType,
+          creasingSize1: r.creasingSize1,
+          creasingSize2: r.creasingSize2,
+          creasingSize3: r.creasingSize3,
+          sheetCount: r.sheetCount
+        }]
+      }
+    }
+    return payload
+  }
+
+  const openBoardPurchasePreview = () => {
+    const keyOf = (r) => r._id || r.id || r.key
+    const selected = (orders || []).filter(r => selectedRowKeys.includes(keyOf(r)))
+    if (!selected.length) {
+      message.warning('请先勾选订�?)
+      return
+    }
+    navigate('/purchase/boards/preview', { state: { rows: selected } })
+  }
+
+  useEffect(() => {
+    loadOrders()
+    loadMeta()
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('supplierHistory') || '[]')
+      setSupplierHistory(Array.isArray(saved) ? saved : [])
+    } catch (e) { void 0 }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const id = sessionStorage.getItem('editOrderId')
+      if (id) {
+        sessionStorage.removeItem('editOrderId')
+        navigate(`/orders/edit/${id}`)
+      }
+    } catch (e) { void 0 }
+  }, [orders])
+
+  const openCreateModal = () => {
+    setEditingOrder(null)
+    setModalOpen(true)
+    form.resetFields()
+    form.setFieldsValue({ creasingType: undefined, boardWidth: undefined, creasingSize1: undefined, creasingSize2: undefined, creasingSize3: undefined })
+    const init = async () => {
+      try {
+        const res = await orderAPI.getNextOrderNumber()
+        const no = res?.data?.data?.orderNumber
+        if (no) {
+          form.setFieldsValue({
+            orderNo: no,
+            deliveryDate: dayjs().add(3, 'day')
+          })
+          return
+        }
+      } catch (e) { /* ignore */ }
+      form.setFieldsValue({ orderNo: undefined, qrCodeUrl: undefined, deliveryDate: dayjs().add(3, 'day') })
+    }
+    init()
+  }
+
+  const openEditModal = (record) => {
+    setEditingOrder(record)
+    setModalOpen(true)
+    const matchedSupplier = (suppliers || []).find(s => s.name === record.supplierName || s.companyName === record.supplierName)
+    form.setFieldsValue({
+      orderNo: record.orderNo || record.orderNumber,
+      customerName: record.customerName,
+      productName: record.productName,
+      productTitle: record.productTitle,
+      spec: record.spec,
+      flute: record.flute,
+      materialCode: record.materialCode,
+      materialNo: record.materialNo,
+      joinMethod: record.joinMethod,
+      quantity: record.quantity,
+      unitPrice: record.unitPrice,
+      amount: record.amount,
+      deposit: record.deposit,
+      balance: Math.max(0, (record.amount || 0) - (record.deposit || 0)),
+      priority: record.priority || 'normal',
+      deliveryDate: record.deliveryDate ? (dayjs.isDayjs(record.deliveryDate) ? record.deliveryDate : dayjs(record.deliveryDate)) : null,
+      notes: record.notes,
+      supplierId: record.supplierId || matchedSupplier?._id || matchedSupplier?.id,
+      supplierName: record.supplierName,
+      qrCodeUrl: record.qrCodeUrl
+    })
+    const files = Array.isArray(record.attachments) ? record.attachments.map((a, i) => {
+      if (typeof a === 'string') return { uid: String(i), name: a, url: a }
+      return { uid: a.fileID || String(i), name: a.name || `附件${i + 1}`, url: a.url }
+    }) : []
+    form.setFieldsValue({ attachments: files })
+    const specParts = String(record.spec || '')
+      .replace(/mm/gi, '')
+      .split(/[×xX*]/)
+      .map(s => String(s || '').trim())
+      .filter(Boolean)
+      .map(s => {
+        const v = s.replace(/[^\d.]/g, '')
+        return v || undefined
+      })
+      .filter(v => v !== undefined)
+    form.setFieldsValue({ spec1: specParts[0], spec2: specParts[1], spec3: specParts[2] })
+  }
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields()
+      const compressImageFile = (file) => new Promise((resolve) => {
+        try {
+          if (!file.originFileObj || file.url) return resolve(file)
+          const reader = new FileReader()
+          reader.onload = (ev) => {
+            const img = new Image()
+            img.onload = () => {
+              const maxW = 1200
+              const scale = Math.min(1, maxW / img.width)
+              const w = Math.round(img.width * scale)
+              const h = Math.round(img.height * scale)
+              const canvas = document.createElement('canvas')
+              canvas.width = w
+              canvas.height = h
+              const ctx = canvas.getContext('2d')
+              ctx.drawImage(img, 0, 0, w, h)
+              try {
+                file.url = canvas.toDataURL('image/jpeg', 0.7)
+              } catch (e) {
+                file.url = ev.target.result
+              }
+              resolve(file)
+            }
+            img.src = ev.target.result
+          }
+          reader.readAsDataURL(file.originFileObj)
+        } catch (e) {
+          resolve(file)
+        }
+      })
+      const ensureAttachmentUrls = async (files = []) => {
+        const pending = (files || []).filter(f => f.originFileObj && !f.url)
+        if (!pending.length) return files
+        await Promise.all(pending.map(compressImageFile))
+        form.setFieldsValue({ attachments: [...files] })
+        return files
+      }
+      await ensureAttachmentUrls(values.attachments || [])
+      const selectedCustomer = (customers || []).find(c => (c._id || c.id) === values.customerId)
+      const selectedSupplier = (suppliers || []).find(s => (s._id || s.id) === values.supplierId)
+      const safeAttachments = (values.attachments || [])
+        .map(f => {
+          const name = f.name || '附件'
+          const url = f.url || (f.response && f.response.url) || undefined
+          return url ? { name, url } : name
+        })
+      const payload = {
+        orderNo: values.orderNo,
+        customerId: values.customerId || (values.customerName ? `name::${values.customerName}` : undefined),
+        customerName: values.customerName || selectedCustomer?.companyName || selectedCustomer?.name,
+        productName: values.productName,
+        productTitle: values.productTitle,
+        supplierId: values.supplierId,
+        supplierName: values.supplierName || selectedSupplier?.name,
+        quantity: values.quantity,
+        unitPrice: values.unitPrice,
+        amount: values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0)),
+        deposit: values.deposit || 0,
+        balance: (values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0))) - Number(values.deposit || 0),
+        items: [{ name: values.productName, quantity: Number(values.quantity || 0), unitPrice: Number(values.unitPrice || 0), spec: values.spec }],
+        totalAmount: values.amount ?? Math.max(0, Number(values.unitPrice || 0) * Number(values.quantity || 0)),
+        createdAt: Date.now(),
+        deliveryDate: values.deliveryDate ? (values.deliveryDate.format ? values.deliveryDate.format('YYYY-MM-DD') : values.deliveryDate) : null,
+        priority: values.priority || 'normal',
+        boardWidth: values.boardWidth,
+        boardHeight: values.boardHeight,
+        creasingType: values.creasingType,
+        creasingSize1: values.creasingSize1,
+        creasingSize2: values.creasingSize2,
+        creasingSize3: values.creasingSize3,
+        spec: values.spec,
+        flute: values.flute,
+        materialCode: values.materialCode,
+        materialNo: values.materialNo,
+        joinMethod: values.joinMethod,
+        notes: values.notes,
+        attachments: safeAttachments,
+        qrCodeUrl: values.qrCodeUrl,
+        orderType: 'production'
+      }
+      if (editingOrder && (editingOrder._id || editingOrder.id || editingOrder.key)) {
+        const id = editingOrder._id || editingOrder.id || editingOrder.key
+        await orderAPI.updateOrder(id, payload)
+        message.success('订单已更�?)
+      } else {
+        const res = await orderAPI.createOrder({ ...payload, status: 'ordered' })
+        const orderNo = res?.data?.order?.orderNo || res?.data?.orderNo || res?.data?.orderNumber
+        message.success(orderNo ? `订单已创建（编号�?{orderNo}）` : '订单已创�?)
+        try {
+          const name = payload.supplierName
+          if (name) {
+            const next = Array.from(new Set([name, ...supplierHistory])).slice(0, 20)
+            setSupplierHistory(next)
+            localStorage.setItem('supplierHistory', JSON.stringify(next))
+          }
+        } catch (e) { void 0 }
+        try {
+          const memKey = (payload.spec && String(payload.spec).trim()) || [String(payload.boardWidth || ''), String(payload.boardHeight || '')].filter(Boolean).join('×')
+          const raw = localStorage.getItem('orderCreateMemory') || '{}'
+          const obj = JSON.parse(raw)
+          obj[memKey] = {
+            flute: payload.flute,
+            creasingType: payload.creasingType,
+            joinMethod: payload.joinMethod,
+            unitPrice: payload.unitPrice,
+            productTitle: payload.productTitle
+          }
+          localStorage.setItem('orderCreateMemory', JSON.stringify(obj))
+        } catch (e) { void 0 }
+      }
+      setModalOpen(false)
+      setEditingOrder(null)
+      form.resetFields()
+      loadOrders()
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || '提交失败'
+      message.error(msg)
+    }
+  }
+
+  const handleDelete = async (record) => {
+    try {
+      const id = record._id || record.id || record.key
+      await orderAPI.deleteOrder(id)
+      message.success('订单已删�?)
+      loadOrders()
+    } catch (e) {
+      message.error('删除失败')
+    }
+  }
+
+
+
+  const normalizeUpload = (e) => {
+    const fileList = Array.isArray(e) ? e : e && e.fileList
+    if (!fileList) return []
+    return fileList.map(f => {
+      if (f.url) return f
+      if (f.originFileObj && !f.thumbUrl) {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const img = new Image()
+          img.onload = () => {
+            const maxW = 1200
+            const scale = Math.min(1, maxW / img.width)
+            const w = Math.round(img.width * scale)
+            const h = Math.round(img.height * scale)
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0, w, h)
+            try {
+              f.url = canvas.toDataURL('image/jpeg', 0.7)
+            } catch (e) {
+              f.url = ev.target.result
+            }
+            form.setFieldsValue({ attachments: [...(form.getFieldValue('attachments') || [])] })
+          }
+          img.src = ev.target.result
+        }
+        reader.readAsDataURL(f.originFileObj)
+      }
+      return f
+    })
+  }
+
+  const loadMeta = async () => {
+    try {
+      const cusRes = await customerAPI.getCustomers({ page: 1, limit: 100 })
+      const normalizeCustomers = (res) => {
+        if (Array.isArray(res)) return res
+        if (Array.isArray(res?.data)) return res.data
+        if (Array.isArray(res?.data?.customers)) return res.data.customers
+        return []
+      }
+      setCustomers(normalizeCustomers(cusRes))
+    } catch (e) {
+      setCustomers([])
+    }
+    try {
+      const supRes = await supplierAPI.getSuppliers({ page: 1, limit: 1000 })
+      const normalizeSuppliers = (res) => {
+        if (Array.isArray(res)) return res
+        if (Array.isArray(res?.data)) return res.data
+        if (Array.isArray(res?.suppliers)) return res.suppliers
+        if (Array.isArray(res?.data?.suppliers)) return res.data.suppliers
+        return []
+      }
+      setSuppliers(normalizeSuppliers(supRes))
+    } catch (e) {
+      setSuppliers([])
+    }
+  }
+
+  const onCategorySelect = async (value) => {
+    if (value === '__NEW__') {
+      setCreatingCategory(true)
+      return
+    }
+    form.setFieldsValue({ productName: value })
+  }
+
+  const onSupplierSelect = async (value, option) => {
+    if (value === '__NEW__') {
+      setCreatingSupplier(true)
+      return
+    }
+    if (String(value).startsWith('name::')) {
+      const name = option?.label
+      form.setFieldsValue({ supplierId: undefined, supplierName: name })
+      return
+    }
+    const sup = suppliers.find(s => (s._id || s.id) === value)
+    form.setFieldsValue({ supplierId: value, supplierName: sup?.name || '' })
+  }
+
+  const onFluteSelect = (value) => {
+    if (value === '__NEW_FLUTE__') {
+      setCreatingFlute(true)
+      return
+    }
+    form.setFieldsValue({ flute: value })
+  }
+
+  const handleCreateCategory = async () => {
+    const name = form.getFieldValue('newCategoryName')
+    if (!name) return
+    try {
+      await categoryAPI.createCategory({ name })
+      setCategories(prev => Array.from(new Set([...(prev || []), name])))
+      form.setFieldsValue({ productName: name, newCategoryName: undefined })
+      setCreatingCategory(false)
+    } catch (e) {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateSupplier = async () => {
+    const name = form.getFieldValue('newSupplierName')
+    if (!name) return
+    try {
+      const res = await supplierAPI.createSupplier({ name })
+      const created = res?.data
+      setSuppliers(prev => [created, ...(prev || [])])
+      form.setFieldsValue({ supplierId: created?._id || created?.id, supplierName: created?.name, newSupplierName: undefined })
+      setCreatingSupplier(false)
+    } catch (e) {
+      setCreatingSupplier(false)
+    }
+  }
+
+  const handleBatchShipping = () => {
+    const selected = orders.filter(o =>
+      selectedRowKeys.includes(o._id || o.id || o.key)
+    )
+
+    if (selected.length === 0) {
+      message.warning('请先勾选要发货的订�?)
+      return
+    }
+
+    // 初始化发货数量为订单数量
+    const initialValues = {}
+    selected.forEach(order => {
+      const key = order._id || order.id || order.key
+      initialValues[`quantity_${key}`] = order.quantity || 0
+    })
+
+    shippingForm.setFieldsValue(initialValues)
+    setShippingOrders(selected)
+    setBatchShippingOpen(true)
+  }
+
+  const handleConfirmShipping = async () => {
+    try {
+      const values = await shippingForm.validateFields()
+
+      // 构建发货数据
+      const shippingData = shippingOrders.map(order => {
+        const key = order._id || order.id || order.key
+        return {
+          ...order,
+          shippingQuantity: Number(values[`quantity_${key}`])
+        }
+      })
+
+      // 跳转到发货管理页面并传递发货数�?      navigate('/shipping', { state: { shippingOrders: shippingData } })
+
+      // 关闭对话框并清空选择
+      setBatchShippingOpen(false)
+      setShippingOrders([])
+      setSelectedRowKeys([])
+      shippingForm.resetFields()
+
+    } catch (error) {
+      if (error.errorFields) {
+        message.error('请检查发货数量输�?)
+      } else {
+        message.error(error.message || '操作失败')
+      }
+    }
+  }
+
+  return (
+    <ConfigProvider locale={zhCN}>
+      <div>
+        <h2 className="page-title">订单管理</h2>
+
+        <Row gutter={[16, 16]} justify="center" style={{ marginBottom: 16 }}>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#7F7FD5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{monthOrderCount}</div>
+              <div className="stats-label">本月订单</div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#ffb74d', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.ordered}</div>
+              <div className="stats-label">已下�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#ff8a65', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.pending}</div>
+              <div className="stats-label">待生�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#42a5f5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.processing}</div>
+              <div className="stats-label">生产�?/div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card className="stats-card" style={{ width: 160, height: 160, background: '#4caf50', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <div className="stats-value">{stats.stocked}</div>
+              <div className="stats-label">已入�?/div>
+            </Card>
+          </Col>
+        </Row>
+
+        <Card style={{ marginBottom: 24 }}>
+          <Space wrap size={20} style={{ marginBottom: 28 }}>
+            <Input
+              placeholder="搜索订单�?客户名称"
+              value={searchParams.keyword}
+              onChange={(e) => {
+                const v = e.target.value
+                const next = { ...searchParams, keyword: v }
+                setSearchParams(next)
+                if (!v) {
+                  applySearch({ ...next, keyword: '' })
+                }
+              }}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <RangePicker
+              value={searchParams.dateRange && searchParams.dateRange.length ? searchParams.dateRange : null}
+              allowClear
+              onChange={(dates) => setSearchParams({ ...searchParams, dateRange: dates || [] })}
+            />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/orders/create')}
+            >
+              新建订单
+            </Button>
+            <Button onClick={openBoardPurchasePreview}>
+              生成采购�?            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+            >
+              订单导出
+            </Button>
+            <Upload
+              accept=".xlsx,.xls"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                void handleImportFile(file)
+                return false
+              }}
+            >
+              <Button icon={<UploadOutlined />} loading={importParsing}>
+                订单导入
+              </Button>
+            </Upload>
+          </Space>
+        </Card>
+
+
+
+        <div>
+          <Table
+            columns={columns}
+            dataSource={orders}
+            loading={loading}
+            rowKey={(record) => record._id || record.id || record.key}
+            rowSelection={selectionMode ? { selectedRowKeys, onChange: setSelectedRowKeys } : undefined}
+            pagination={false}
+            size="small"
+            tableLayout="fixed"
+            scroll={{ x: 'max-content' }}
+            sticky={{ offsetHeader: 0, getContainer: getStickyContainer }}
+          />
+        </div>
+
+        <Modal
+          title={`订单导入预览${importFileName ? `�?{importFileName}` : ''}`}
+          open={importOpen}
+          onCancel={() => {
+            if (importSubmitting) return
+            setImportOpen(false)
+            setImportRows([])
+            setImportFileName('')
+          }}
+          okText="开始导�?
+          cancelText="取消"
+          confirmLoading={importSubmitting}
+          okButtonProps={{
+            disabled: importSubmitting || !(importRows || []).some(r => r.status === 'valid')
+          }}
+          onOk={() => {
+            void (async () => {
+              const valid = (importRows || []).filter(r => r.status === 'valid')
+              if (!valid.length) {
+                message.warning('没有可导入的数据')
+                return
+              }
+              setImportSubmitting(true)
+              try {
+                const chunkSize = 10
+                const results = []
+                for (let i = 0; i < valid.length; i += chunkSize) {
+                  const chunk = valid.slice(i, i + chunkSize)
+                  const settled = await Promise.allSettled(
+                    chunk.map(r => orderAPI.createOrder({ ...buildCreatePayload(r), status: 'ordered' }))
+                  )
+                  settled.forEach((s, idx) => {
+                    results.push({ key: chunk[idx].key, status: s.status, reason: s.status === 'rejected' ? s.reason : undefined })
+                  })
+                }
+
+                const nextRows = (importRows || []).map(r => {
+                  const hit = results.find(x => x.key === r.key)
+                  if (!hit) return r
+                  if (hit.status === 'fulfilled') return { ...r, status: 'success', importError: '' }
+                  const msg = hit.reason?.response?.data?.message || hit.reason?.message || '导入失败'
+                  return { ...r, status: 'failed', importError: msg }
+                })
+                setImportRows(nextRows)
+
+                const successCount = nextRows.filter(r => r.status === 'success').length
+                const failedCount = nextRows.filter(r => r.status === 'failed').length
+                message.success(`导入完成：成�?${successCount} 条，失败 ${failedCount} 条`)
+                await loadOrders()
+              } finally {
+                setImportSubmitting(false)
+              }
+            })()
+          }}
+          width={1100}
+          destroyOnClose
+        >
+          <Space style={{ marginBottom: 12 }} wrap>
+            <Tag color="blue">总行数：{(importRows || []).length}</Tag>
+            <Tag color="green">可导入：{(importRows || []).filter(r => r.status === 'valid').length}</Tag>
+            <Tag color="red">不可导入：{(importRows || []).filter(r => r.status === 'invalid').length}</Tag>
+            <Tag color="green">已导入：{(importRows || []).filter(r => r.status === 'success').length}</Tag>
+            <Tag color="red">失败：{(importRows || []).filter(r => r.status === 'failed').length}</Tag>
+          </Space>
+          <Table
+            columns={importPreviewColumns}
+            dataSource={importRows}
+            rowKey={(r) => r.key}
+            pagination={{ pageSize: 20, showSizeChanger: true }}
+            size="small"
+            scroll={{ x: 'max-content', y: 520 }}
+          />
+        </Modal>
+
+        <Modal
+          title={editingOrder ? '编辑订单' : '新建订单'}
+          open={modalOpen}
+          onOk={handleSubmit}
+          onCancel={() => setModalOpen(false)}
+          destroyOnHidden
+          forceRender
+          width={1000}
+          styles={{ body: { maxHeight: '70vh', overflowY: 'auto', padding: 16 } }}
+        >
+          <Form form={form} layout="vertical" onValuesChange={(changed, all) => {
+            if (changed.boardWidth || changed.creasingSize1 || changed.creasingSize2) {
+              const w = Number(all.boardWidth || 0)
+              const s1 = Number(all.creasingSize1 || 0)
+              const s2 = Number(all.creasingSize2 || 0)
+              const s3 = Math.max(0, w - s1 - s2)
+              form.setFieldsValue({ creasingSize3: s3 })
+            }
+            if (changed.creasingType) {
+              const ct = all.creasingType
+              if (ct === '无压�?) {
+                form.setFieldsValue({ creasingSize1: undefined, creasingSize2: undefined, creasingSize3: undefined })
+              }
+            }
+            if (changed.quantity || changed.unitPrice) {
+              const qty = Number(all.quantity || 0)
+              const price = Number(all.unitPrice || 0)
+              const amt = Math.max(0, qty * price)
+              const dep = Number(all.deposit || 0)
+              form.setFieldsValue({ amount: amt, balance: Math.max(0, amt - dep) })
+            }
+            if (changed.deposit) {
+              const amt = Number(all.amount || 0)
+              const dep = Number(all.deposit || 0)
+              form.setFieldsValue({ balance: Math.max(0, amt - dep) })
+            }
+            if (changed.spec1 || changed.spec2 || changed.spec3) {
+              const a = all.spec1
+              const b = all.spec2
+              const c = all.spec3
+              const parts = [a, b, c].map(v => (v === undefined || v === null) ? '' : String(v).trim()).filter(v => v !== '')
+              const s = parts.length ? parts.join('×') : ''
+              form.setFieldsValue({ spec: s })
+            }
+            if (changed.boardWidth || changed.boardHeight || changed.spec) {
+              try {
+                const k = (all.spec && String(all.spec).trim()) || [String(all.boardWidth || ''), String(all.boardHeight || '')].filter(Boolean).join('×')
+                const raw = localStorage.getItem('orderCreateMemory') || '{}'
+                const obj = JSON.parse(raw)
+                const mem = obj[k]
+                if (mem) {
+                  const patch = {}
+                  if (!all.flute && mem.flute) patch.flute = mem.flute
+                  if (!all.creasingType && mem.creasingType) patch.creasingType = mem.creasingType
+                  if (!all.joinMethod && mem.joinMethod) patch.joinMethod = mem.joinMethod
+                  if (!all.unitPrice && mem.unitPrice) patch.unitPrice = mem.unitPrice
+                  if (!all.productTitle && mem.productTitle) patch.productTitle = mem.productTitle
+                  if (Object.keys(patch).length) form.setFieldsValue(patch)
+                }
+              } catch (e) { void 0 }
+            }
+          }}>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item shouldUpdate noStyle>
+                  {() => {
+                    const orderNo = form.getFieldValue('orderNo')
+                    const qrUrl = form.getFieldValue('qrCodeUrl')
+                    return orderNo && qrUrl ? (
+                      <div style={{ textAlign: 'center', padding: 12, border: '1px dashed #e5e5e5', borderRadius: 8, marginBottom: 12, background: '#fafafa' }}>
+                        <AntImage width={160} src={qrUrl} />
+                      </div>
+                    ) : null
+                  }}
+                </Form.Item>
+                <Form.Item name="orderNo" label="订单编号" style={{ width: 280 }}>
+                  <Input disabled style={{ width: 280 }} />
+                </Form.Item>
+                <Form.Item name="customerId" label="客户名称" rules={[{ validator: async (_, val) => { const name = form.getFieldValue('customerName'); if (val || name) return Promise.resolve(); return Promise.reject('请选择客户') } }]}>
+                  <Select
+                    placeholder="请选择客户"
+                    options={customerOptions}
+                    showSearch
+                    filterOption={false}
+                    style={{ width: 280 }}
+                    onSearch={async (q) => {
+                      try {
+                        const res = await customerAPI.getCustomers({ q, page: 1, limit: 50 })
+                        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.customers) ? res.data.customers : []
+                        setCustomers(list)
+                      } catch (e) {
+                        setCustomers(prev => prev)
+                      }
+                    }}
+                    onChange={(val, option) => {
+                      if (String(val).startsWith('name::')) {
+                        const name = option?.label
+                        form.setFieldsValue({ customerId: undefined, customerName: name })
+                      } else {
+                        const c = (customers || []).find(x => (x._id || x.id) === val)
+                        form.setFieldsValue({ customerId: val, customerName: c?.companyName || c?.name || c?.company })
+                      }
+                    }}
+                    allowClear
+                  />
+                </Form.Item>
+                <Form.Item name="supplierId" label="供应�? rules={[{ required: true, message: '请选择供应�? }]}>
+                  <Select
+                    placeholder="请选择供应�?
+                    options={supplierOptions}
+                    showSearch
+                    optionFilterProp="label"
+                    style={{ width: 280 }}
+                    onChange={onSupplierSelect}
+                    allowClear
+                  />
+                </Form.Item>
+                {creatingSupplier && (
+                  <Space style={{ marginBottom: 8 }}>
+                    <Input
+                      placeholder="输入供应商名�?
+                      style={{ width: 200 }}
+                      value={form.getFieldValue('newSupplierName')}
+                      onChange={(e) => form.setFieldsValue({ newSupplierName: e.target.value })}
+                    />
+                    <Button type="primary" onClick={handleCreateSupplier}>保存</Button>
+                    <Button onClick={() => setCreatingSupplier(false)}>取消</Button>
+                  </Space>
+                )}
+                <Form.Item name="supplierName" hidden>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="quantity" label="数量" rules={[{ required: true, message: '请输入数�? }]}>
+                  <Input type="number" placeholder="请输入数�? style={{ width: 180, color: '#1677ff' }} />
+                </Form.Item>
+                <Form.Item name="unitPrice" label="单价(�?" rules={[{ required: true, message: '请输入单�? }]}>
+                  <Input type="number" placeholder="请输入单�? style={{ width: 180, color: '#ff4d4f' }} />
+                </Form.Item>
+                <Form.Item name="amount" label="金额(�?">
+                  <Input type="number" placeholder="自动计算" readOnly style={{ width: 180, color: '#ff4d4f' }} />
+                </Form.Item>
+                <Form.Item name="deposit" label="已付定金(�?">
+                  <Input type="number" placeholder="请输入已付定�? style={{ width: 180 }} />
+                </Form.Item>
+                <Form.Item name="balance" label="余额(�?">
+                  <Input type="number" placeholder="自动计算" disabled style={{ width: 180 }} />
+                </Form.Item>
+                <Form.Item name="joinMethod" label="拼接方式">
+                  <Select options={[{ value: '打钉', label: '打钉' }, { value: '粘胶', label: '粘胶' }]} allowClear style={{ width: 200 }} />
+                </Form.Item>
+
+              </Col>
+              <Col span={12}>
+                <Form.Item name="productName" label="产品名称" rules={[{ required: true, message: '请选择或新增产品名�? }]} style={{ width: 320 }}>
+                  <>
+                    <Select
+                      placeholder="请选择产品名称"
+                      options={[...(categories || []).map(n => ({ value: n, label: n })), { value: '__NEW__', label: '新增产品名称' }]}
+                      showSearch
+                      onChange={onCategorySelect}
+                      style={{ width: 320 }}
+                    />
+                    {creatingCategory && (
+                      <Space style={{ marginTop: 8 }}>
+                        <Input placeholder="输入产品名称" style={{ width: 200 }} value={form.getFieldValue('newCategoryName')} onChange={(e) => form.setFieldsValue({ newCategoryName: e.target.value })} />
+                        <Button type="primary" onClick={handleCreateCategory}>保存</Button>
+                        <Button onClick={() => setCreatingCategory(false)}>取消</Button>
+                      </Space>
+                    )}
+                  </>
+                </Form.Item>
+                <Form.Item name="materialCode" label="材料编码" rules={[{ required: true, message: '请输入材料编�? }]} style={{ width: 240 }}>
+                  <Input placeholder="请输入材料编�? style={{ width: 240 }} />
+                </Form.Item>
+                <Form.Item label="产品规格（mm�? required>
+                  <Space>
+                    <Form.Item name="spec1" noStyle rules={[{ required: true, message: '请输入规�? }]}>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="spec2" noStyle rules={[{ required: true, message: '请输入规�? }]}>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="spec3" noStyle>
+                      <Input type="number" placeholder="mm" style={{ width: 120 }} />
+                    </Form.Item>
+                  </Space>
+                </Form.Item>
+                <Form.Item name="spec" hidden>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="flute" label="愣型" rules={[{ required: true, message: '请选择愣型' }]} style={{ width: 180 }}>
+                  <>
+                    <Select
+                      placeholder="请选择愣型"
+                      options={[
+                        { value: 'AB�?, label: 'AB�? },
+                        { value: 'EB�?, label: 'EB�? },
+                        { value: 'A�?, label: 'A�? },
+                        { value: 'B�?, label: 'B�? },
+                        { value: 'E�?, label: 'E�? },
+                        { value: '__NEW_FLUTE__', label: '新增' }
+                      ]}
+                      onChange={onFluteSelect}
+                      showSearch
+                      style={{ width: 180 }}
+                    />
+                    {creatingFlute && (
+                      <Space style={{ marginTop: 8 }}>
+                        <Input style={{ width: 180 }} placeholder="输入愣型" value={form.getFieldValue('newFlute')} onChange={(e) => form.setFieldsValue({ newFlute: e.target.value })} />
+                        <Button type="primary" onClick={() => { const v = form.getFieldValue('newFlute'); if (v) { form.setFieldsValue({ flute: v, newFlute: undefined }); setCreatingFlute(false) } }}>保存</Button>
+                        <Button onClick={() => setCreatingFlute(false)}>取消</Button>
+                      </Space>
+                    )}
+                  </>
+                </Form.Item>
+                <Form.Item name="creasingType" label="压线方式" style={{ width: 200 }}>
+                  <Select options={[{ value: '凹凸压线', label: '凹凸压线' }, { value: '平压�?, label: '平压�? }, { value: '无压�?, label: '无压�? }]} style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item label="纸板尺寸（门幅mm×长度mm�? required>
+                  <Space>
+                    <Form.Item name="boardWidth" noStyle rules={[{ required: true, message: '请输入门�? }]}>
+                      <Input type="number" placeholder="门幅(mm)" style={{ width: 120 }} />
+                    </Form.Item>
+                    ×
+                    <Form.Item name="boardHeight" noStyle rules={[{ required: true, message: '请输入长�? }]}>
+                      <Input type="number" placeholder="长度(mm)" style={{ width: 120 }} />
+                    </Form.Item>
+                  </Space>
+                </Form.Item>
+                <Form.Item label="压线尺寸（mm�?1-2-3)" shouldUpdate>
+                  {() => {
+                    const isNoCrease = form.getFieldValue('creasingType') === '无压�?
+                    return (
+                      <Space>
+                        <Form.Item name="creasingSize1" noStyle>
+                          <Input type="number" placeholder="尺寸1(mm)" style={{ width: 120 }} disabled={isNoCrease} />
+                        </Form.Item>
+                        -
+                        <Form.Item name="creasingSize2" noStyle>
+                          <Input type="number" placeholder="尺寸2(mm)" style={{ width: 120 }} disabled={isNoCrease} />
+                        </Form.Item>
+                        -
+                        <Form.Item name="creasingSize3" noStyle>
+                          <Input type="number" placeholder="尺寸3(mm,自动)" style={{ width: 120 }} disabled />
+                        </Form.Item>
+                      </Space>
+                    )
+                  }}
+                </Form.Item>
+                <Form.Item name="productTitle" label="商品名称" style={{ width: 320 }}>
+                  <Input placeholder="请输入商品名�? style={{ width: 320 }} />
+                </Form.Item>
+                <Form.Item name="materialNo" label="物料�? style={{ width: 360 }}>
+                  <Input placeholder="请输入物料号" style={{ width: 360 }} />
+                </Form.Item>
+                <Form.Item name="priority" label="优先�? initialValue="normal" style={{ width: 200 }}>
+                  <Select options={[{ value: 'normal', label: '普�? }, { value: 'urgent', label: '加�? }]} style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item name="deliveryDate" label="交付日期" style={{ width: 200 }}>
+                  <DatePicker style={{ width: 200 }} />
+                </Form.Item>
+                <Form.Item name="attachments" label="上传图纸" valuePropName="fileList" getValueFromEvent={normalizeUpload}>
+                  <Upload.Dragger multiple listType="picture" beforeUpload={() => false} style={{ height: 160, width: 320, display: 'inline-block' }}>
+                    <p className="ant-upload-drag-icon">📄</p>
+                    <p className="ant-upload-text">点击或拖拽文件到此处上传</p>
+                  </Upload.Dragger>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="notes" label="备注">
+                  <Input.TextArea style={{ height: 100, width: 320 }} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+              </Col>
+            </Row>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="订单详情"
+          open={detailOpen}
+          onOk={() => setDetailOpen(false)}
+          onCancel={() => setDetailOpen(false)}
+          destroyOnHidden
+          width={900}
+          styles={{ body: { maxHeight: '70vh', overflowY: 'auto', padding: 16 } }}
+        >
+          {detailOrder && (
+            <div>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <p>订单编号：{detailOrder.orderNo}</p>
+                  <p>客户名：{detailOrder.customerName}</p>
+                  <p>产品名称：{detailOrder.productName}</p>
+                  <p>产品规格：{detailOrder.spec}</p>
+                  <p>材质编码：{detailOrder.materialCode}</p>
+                  <p>愣型：{detailOrder.flute}</p>
+                </Col>
+                <Col span={12}>
+                  <p>压线尺寸：{(detailOrder.creasingSize1 || 0)}-{(detailOrder.creasingSize2 || 0)}-{(detailOrder.creasingSize3 || 0)}{!detailOrder.creasingSize1 && !detailOrder.creasingSize2 && !detailOrder.creasingSize3 ? (detailOrder.creasingType ? ` (${detailOrder.creasingType})` : '') : ''}</p>
+                  <p>数量：{detailOrder.quantity}</p>
+                  <p>单价：{detailOrder.unitPrice ?? '-'}</p>
+                  <p>金额：{detailOrder.amount}</p>
+                  <p>订单状态：{statusMap[detailOrder.status]?.text || detailOrder.status}</p>
+                </Col>
+              </Row>
+              <Divider />
+              <div>
+                <h4>附件图纸</h4>
+                {Array.isArray(detailOrder.attachments) && detailOrder.attachments.length ? (
+                  <Space wrap>
+                    {detailOrder.attachments.map((f) => (
+                      f.url ? <AntImage key={f.uid} width={160} src={f.url} /> : <Tag key={f.uid}>{f.name}</Tag>
+                    ))}
+                  </Space>
+                ) : (
+                  <Tag>暂无附件</Tag>
+                )}
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          title="批量发货确认"
+          open={batchShippingOpen}
+          onCancel={() => {
+            setBatchShippingOpen(false)
+            setShippingOrders([])
+            shippingForm.resetFields()
+          }}
+          onOk={handleConfirmShipping}
+          width={900}
+          okText="确认发货"
+          cancelText="取消"
+        >
+          <Form form={shippingForm} layout="vertical">
+            <p>已选择 <strong>{shippingOrders.length}</strong> 个订�?/p>
+            <Divider />
+            <Table
+              dataSource={shippingOrders}
+              pagination={false}
+              size="small"
+              scroll={{ y: 400 }}
+              rowKey={(record) => record._id || record.id || record.key}
+              columns={[
+                {
+                  title: '订单�?,
+                  dataIndex: 'orderNo',
+                  key: 'orderNo',
+                  width: 140
+                },
+                {
+                  title: '客户',
+                  dataIndex: 'customerName',
+                  key: 'customerName',
+                  width: 120
+                },
+                {
+                  title: '产品',
+                  dataIndex: 'productName',
+                  key: 'productName',
+                  width: 120
+                },
+                {
+                  title: '订单数量',
+                  dataIndex: 'quantity',
+                  key: 'quantity',
+                  width: 100
+                },
+                {
+                  title: '发货数量',
+                  key: 'shippingQuantity',
+                  width: 150,
+                  render: (_, record) => {
+                    const key = record._id || record.id || record.key
+                    return (
+                      <Form.Item
+                        name={`quantity_${key}`}
+                        rules={[
+                          { required: true, message: '请输入发货数�? },
+                          {
+                            type: 'number',
+                            min: 1,
+                            max: record.quantity,
+                            message: `发货数量必须�?-${record.quantity}之间`
+                          }
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input
+                          type="number"
+                          min={1}
+                          max={record.quantity}
+                          placeholder="发货数量"
+                        />
+                      </Form.Item>
+                    )
+                  }
+                }
+              ]}
+            />
+          </Form>
+        </Modal>
+      </div>
+    </ConfigProvider>
+  )
+}
+
+export default OrderManagement

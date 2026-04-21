@@ -1,0 +1,253 @@
+.app-layout {
+  height: 100vh;
+  background: #f0f2f5;
+}
+
+.content-layout {
+  padding: 24px;
+  min-height: calc(100vh - 64px);
+}
+
+.app-content {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  overflow: auto;
+}
+
+/* 页面标题样式 */
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #262626;
+  border-bottom: 2px solid #1890ff;
+  padding-bottom: 8px;
+}
+
+/* 统计卡片样式 */
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card .stats-value {
+  font-size: 32px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.stats-card .stats-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* 数据表格样式 */
+.data-table {
+  margin-top: 24px;
+}
+
+.data-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+/* 表单样式 */
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-container .ant-form-item-label {
+  font-weight: 500;
+}
+
+/* 新建订单页面统一输入项间距 */
+.order-create-form .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.order-create-form .ant-space {
+  gap: 8px;
+}
+
+/* 登录页面样式 */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-form {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 400px;
+}
+
+.login-form .login-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  color: #262626;
+}
+
+/* 侧边栏样式优化 */
+.ant-layout-sider {
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ant-layout-sider .ant-menu {
+  border-right: none !important;
+}
+
+.ant-layout-sider .ant-menu-item {
+  margin: 4px 8px !important;
+  border-radius: 6px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+}
+
+.ant-layout-sider .ant-menu-item:hover {
+  background-color: #e6f7ff !important;
+  color: #1890ff !important;
+}
+
+.ant-layout-sider .ant-menu-item-selected {
+  background-color: #1890ff !important;
+  color: white !important;
+  border-radius: 6px !important;
+  margin: 4px 8px !important;
+}
+
+.ant-layout-sider .ant-menu-item-selected::after {
+  display: none !important;
+}
+
+/* 头部样式优化 */
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.app-header .ant-typography {
+  color: white !important;
+}
+
+.app-header .ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.app-header .ant-btn-text {
+  color: white !important;
+}
+
+.app-header .ant-btn-text:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-header .anticon {
+  color: white !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .content-layout {
+    padding: 16px;
+  }
+  
+  .app-content {
+    padding: 16px;
+  }
+  
+  .stats-card {
+    padding: 16px;
+  }
+  
+  .stats-card .stats-value {
+    font-size: 24px;
+  }
+}
+
+.material-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.material-status:hover {
+  transform: scale(1.06);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+}
+
+.material-status--arrived .material-status-icon {
+  color: #16a34a;
+  font-size: 22px;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.erp-production-multi-sku-parent > td {
+  background: #f0f7ff;
+  font-weight: 600;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.erp-production-multi-sku-parent:hover > td {
+  background: #e6f4ff;
+}
+
+.erp-production-orderNo-multi {
+  font-weight: 700;
+}
+
+.erp-production-expand-icon-large .anticon {
+  font-size: 22px;
+  color: #1677ff;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.erp-order-multi-sku-parent > td {
+  background: #f0f7ff;
+  font-weight: 600;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.erp-order-multi-sku-parent:hover > td {
+  background: #e6f4ff;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.erp-order-multi-sku-child > td {
+  background: #fafafa;
+}
+
+.erp-order-orderNo-multi {
+  font-weight: 700;
+}
+
+.erp-order-expand-icon-large .anticon {
+  font-size: 22px;
+  color: #1677ff;
+}
+
+.material-status--pending .material-status-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: #f9fafb;
+}
+
+.material-status--pending:hover .material-status-circle {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}

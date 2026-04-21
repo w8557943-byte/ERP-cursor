@@ -1,0 +1,30 @@
+  shipping: {
+    createFromOrder: async (payload) => {
+      try {
+        const orderId = payload.orderId || payload.id || payload._id;
+        const orderNo = payload.orderNo || payload.orderNumber;
+
+        if (!orderId && !orderNo) throw new Error('缺少订单ID或单号');
+
+        if (isCloudEnvironment()) {
+          const res = await wx.cloud.callFunction({
+            name: 'erp-api',
+            data: {
+              action: 'createShippingOrder',
+              data: { orderId, orderNo }
+            }
+          });
+          if (res.result && res.result.success) {
+            return res.result;
+          }
+          throw new Error(res.result?.message || '生成发货单失败');
+        } else {
+          throw new Error('当前环境不支持发货操作，请在云环境使用');
+        }
+      } catch (error) {
+        console.error('创建待发货失败:', error);
+        throw error;
+      }
+    },
+
+    getPending: async () => {
