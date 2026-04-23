@@ -49,13 +49,13 @@ export default defineConfig(({ command, mode }) => {
     build: {
       outDir: 'web-dist',
       sourcemap: false,
+      chunkSizeWarningLimit: 5000,
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            ui: ['antd', '@ant-design/icons'],
-            charts: ['@ant-design/charts'],
-            utils: ['axios', 'dayjs', 'zustand']
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              return 'bundle'
+            }
           }
         }
       }

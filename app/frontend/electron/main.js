@@ -118,6 +118,13 @@ function resolveContentType(filePath) {
 async function startStaticServer() {
   if (staticServer) return
   const rootDir = path.join(__dirname, '../web-dist')
+  appendMainLog(`[DEBUG] static rootDir: ${rootDir}`)
+  appendMainLog(`[DEBUG] __dirname: ${__dirname}`)
+  appendMainLog(`[DEBUG] process.resourcesPath: ${process.resourcesPath}`)
+  appendMainLog(`[DEBUG] isDev: ${isDev}`)
+  if (!isDev) {
+    appendMainLog(`[DEBUG] web-dist exists: ${fs.existsSync(rootDir)}`)
+  }
 
   staticServer = http.createServer((req, res) => {
     try {
@@ -247,14 +254,18 @@ async function startBackendServer() {
     const secretPath = path.join(app.getPath('userData'), 'jwt.secret')
     let secret = ''
     try {
-      secret = String(fs.readFileSync(secretPath, 'utf8') || '').trim()
+      if (fs.existsSync(secretPath)) {
+        secret = String(fs.readFileSync(secretPath, 'utf8') || '').trim()
+        appendMainLog(`[INFO] loaded existing JWT_SECRET`)
+      }
     } catch (_) {
-      secret = ''
+      appendMainLog(`[WARN] failed to load JWT_SECRET, will generate new one`)
     }
-    if (!secret) {
+    if (!secret || secret.length < 32) {
       secret = crypto.randomBytes(48).toString('base64url')
       try {
         fs.writeFileSync(secretPath, `${secret}\n`, { encoding: 'utf8' })
+        appendMainLog(`[INFO] generated and saved new JWT_SECRET`)
       } catch (e) {
         appendMainLog(`jwt secret write failed: ${String(e && e.stack ? e.stack : e)}`)
       }
@@ -361,28 +372,38 @@ function createWindow() {
       appendMainLog(`loadURL dev failed: ${String(e && e.stack ? e.stack : e)}`)
     })
   } else {
-    const port = Number(staticServerPort)
-    const url = Number.isFinite(port) && port > 0 ? `http://127.0.0.1:${port}` : ''
-    if (url) {
-      void mainWindow.loadURL(url).catch((e) => {
-        appendMainLog(`loadURL prod failed: ${String(e && e.stack ? e.stack : e)}`)
-        try {
-          dialog.showErrorBox('页面加载失败', String(e && e.message ? e.message : e))
-        } catch (_) {
-          void 0
-        }
-      })
-    } else {
-      const indexPath = path.join(__dirname, '../web-dist/index.html')
-      void mainWindow.loadFile(indexPath).catch((e) => {
-        appendMainLog(`loadFile failed: ${String(e && e.stack ? e.stack : e)}`)
-        try {
-          dialog.showErrorBox('页面加载失败', String(e && e.message ? e.message : e))
-        } catch (_) {
-          void 0
-        }
-      })
+    // 生产模式：直接加载打包的 index.html
+    const indexPath = path.join(process.resourcesPath, 'app', 'web-dist', 'index.html')
+    appendMainLog(`[DEBUG] indexPath: ${indexPath}`)
+    appendMainLog(`[DEBUG] index exists: ${fs.existsSync(indexPath)}`)
+    if (!fs.existsSync(indexPath)) {
+      const altPath = path.join(__dirname, '../web-dist', 'index.html')
+      appendMainLog(`[DEBUG] trying altPath: ${altPath}`)
+      appendMainLog(`[DEBUG] altPath exists: ${fs.existsSync(altPath)}`)
+      if (fs.existsSync(altPath)) {
+        appendMainLog(`[INFO] using altPath for index.html`)
+        appendMainLog(`loading from: ${altPath}`)
+        void mainWindow.loadFile(altPath).catch((e) => {
+          appendMainLog(`loadFile alt failed: ${String(e && e.stack ? e.stack : e)}`)
+        })
+        return
+      }
     }
+    appendMainLog(`loading from: ${indexPath}`)
+    void mainWindow.loadFile(indexPath).catch((e) => {
+      appendMainLog(`loadFile failed: ${String(e && e.stack ? e.stack : e)}`)
+      try {
+        dialog.showErrorBox('页面加载失败', String(e && e.message ? e.message : e))
+      } catch (_) {
+        void 0
+      }
+      const fallbackPath = path.join(__dirname, 'fallback.html')
+      appendMainLog(`[DEBUG] fallbackPath: ${fallbackPath}`)
+      if (fs.existsSync(fallbackPath)) {
+        appendMainLog(`[INFO] loading fallback page`)
+        void mainWindow.loadFile(fallbackPath).catch(() => {})
+      }
+    })
   }
 
   // 窗口准备好后显示
